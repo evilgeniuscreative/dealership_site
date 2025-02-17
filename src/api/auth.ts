@@ -1,13 +1,50 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import passport from 'passport';
 import { RowDataPacket } from 'mysql2';
 import pool from '../services/database';
-import { generateToken, authMiddleware } from '../middleware/auth';
-import { sendPasswordResetEmail, send2FASetupEmail, sendLoginAlertEmail } from '../services/email';
-import { generateSecret, generateQRCode, verifyToken, generateBackupCodes, hashBackupCode } from '../services/twoFactor';
+import { authMiddleware } from '../middleware/auth';
+import {
+  initiateRecovery,
+  validateRecoveryToken,
+  resetPassword,
+  generateBackupCodes,
+  validateBackupCode
+} from '../services/recovery';
+import {
+  generateToken,
+  validateTwoFactorToken,
+  generateTOTPSecret,
+  generateTOTPUri,
+  verifyTOTPToken,
+  generateRefreshToken,
+  hashToken
+} from '../services/token';
+import {
+  linkGoogleAccount,
+  unlinkGoogleAccount,
+  findUserByGoogleId,
+  createUserFromGoogleProfile
+} from '../services/google';
+import {
+  LoginRequest,
+  ResetPasswordRequest,
+  ChangePasswordRequest,
+  TwoFactorSetupRequest,
+  GoogleLinkRequest,
+  User,
+  AuthResponse,
+  AuthRequest,
+  UserResponse,
+  AuthenticatedUser
+} from '../types';
 
 const router = express.Router();
+
+// Rate limiting setup
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
 interface LoginAttempt {
   username: string;
@@ -15,7 +52,7 @@ interface LoginAttempt {
   success: boolean;
 }
 
-const recordLoginAttempt = async (attempt: LoginAttempt) => {
+const recordLoginAttempt = async (attempt: LoginAttempt): Promise<void> => {
   try {
     await pool.execute(
       'INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, ?)',
@@ -34,11 +71,11 @@ const checkLoginAttempts = async (username: string, ip_address: string): Promise
        WHERE username = ? 
        AND ip_address = ? 
        AND success = false 
-       AND attempted_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)`,
-      [username, ip_address]
+       AND attempted_at > DATE_SUB(NOW(), INTERVAL ? MINUTE)`,
+      [username, ip_address, LOCKOUT_DURATION / (60 * 1000)]
     );
 
-    return rows[0].count < 5;
+    return rows[0].count < MAX_LOGIN_ATTEMPTS;
   } catch (error) {
     console.error('Error checking login attempts:', error);
     return false;
@@ -46,21 +83,23 @@ const checkLoginAttempts = async (username: string, ip_address: string): Promise
 };
 
 // Login endpoint
-router.post('/login', async (req, res) => {
-  const { username, password, twoFactorToken } = req.body;
-  const ip_address = req.ip;
-
+router.post('/login', async (req: Request, res: Response) => {
   try {
+    const { username, password, twoFactorToken } = req.body as LoginRequest;
+    const ip_address = req.ip || '0.0.0.0';
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    // Check for too many failed attempts
     const canAttempt = await checkLoginAttempts(username, ip_address);
     if (!canAttempt) {
-      await recordLoginAttempt({ username, ip_address, success: false });
-      return res.status(429).json({
-        error: 'Too many failed login attempts. Please try again later.'
-      });
+      return res.status(429).json({ error: 'Too many failed attempts. Please try again later.' });
     }
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM users WHERE username = ? AND is_active = true',
+      'SELECT * FROM users WHERE username = ?',
       [username]
     );
 
@@ -69,266 +108,251 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const user = rows[0];
+    const user = rows[0] as User;
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
+    if (!isValidPassword) {
       await recordLoginAttempt({ username, ip_address, success: false });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check 2FA if enabled
+    // Handle 2FA if enabled
     if (user.two_factor_enabled) {
       if (!twoFactorToken) {
-        return res.status(200).json({
-          requiresTwoFactor: true,
-          message: 'Please enter your 2FA code'
-        });
+        return res.status(400).json({ error: '2FA token required' });
       }
 
-      const isValidToken = verifyToken(user.two_factor_secret, twoFactorToken);
+      const isValidToken = verifyTOTPToken(twoFactorToken, user.two_factor_secret || '');
       if (!isValidToken) {
-        return res.status(401).json({ error: 'Invalid 2FA code' });
+        await recordLoginAttempt({ username, ip_address, success: false });
+        return res.status(401).json({ error: 'Invalid 2FA token' });
       }
     }
 
-    const accessToken = generateToken({
+    // Create AuthenticatedUser from database User
+    const authenticatedUser: AuthenticatedUser = {
       id: user.id,
       username: user.username,
       role: user.role
-    });
+    };
 
-    const refreshToken = generateToken({
-      id: user.id,
-      username: user.username,
-      type: 'refresh'
-    });
+    // Generate tokens
+    const token = generateToken(authenticatedUser);
+    const refreshToken = await generateRefreshToken(user.id);
 
-    await pool.execute(
-      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
-      [user.id, refreshToken]
-    );
-
+    // Record successful login
+    await recordLoginAttempt({ username, ip_address, success: true });
     await pool.execute(
       'UPDATE users SET last_login = NOW() WHERE id = ?',
       [user.id]
     );
 
-    await recordLoginAttempt({ username, ip_address, success: true });
+    const userResponse: UserResponse = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      twoFactorEnabled: user.two_factor_enabled
+    };
 
-    // Send login alert email
-    await sendLoginAlertEmail(
-      user.email,
-      ip_address,
-      req.headers['user-agent'] || 'Unknown',
-      'Unknown Location' // You can integrate with a geolocation service here
-    );
-
-    res.json({
-      token: accessToken,
+    const response: AuthResponse = {
+      token,
       refreshToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        twoFactorEnabled: user.two_factor_enabled
-      }
-    });
+      user: userResponse
+    };
+
+    return res.json(response);
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Setup 2FA
-router.post('/2fa/setup', authMiddleware, async (req, res) => {
+// Logout endpoint
+router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const secret = generateSecret();
-    const qrCodeUrl = await generateQRCode(secret.base32);
-    const backupCodes = generateBackupCodes();
-    const hashedBackupCodes = backupCodes.map(hashBackupCode);
+    const refreshToken = req.body.refreshToken;
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token required' });
+    }
 
-    // Store the secret temporarily (you might want to use Redis for this)
-    // For now, we'll update the user directly
+    // Revoke the refresh token
     await pool.execute(
-      'UPDATE users SET two_factor_secret = ? WHERE id = ?',
-      [secret.base32, req.user.id]
+      'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = ? AND user_id = ?',
+      [hashToken(refreshToken), req.user?.id]
     );
 
-    // Send setup email with QR code and backup codes
-    await send2FASetupEmail(req.user.email, qrCodeUrl, backupCodes);
+    return res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-    res.json({
-      secret: secret.base32,
-      qrCodeUrl,
+// Password reset endpoints
+router.post('/forgot-password', async (req: AuthRequest, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    await initiateRecovery(email);
+    return res.json({ message: 'Recovery email sent if account exists' });
+  } catch (error) {
+    console.error('Password recovery error:', error);
+    return res.status(500).json({ error: 'Failed to process recovery request' });
+  }
+});
+
+router.post('/validate-reset-token', async (req: AuthRequest, res: Response) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    const isValid = await validateRecoveryToken(token);
+    return res.json({ valid: isValid });
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return res.status(500).json({ error: 'Failed to validate token' });
+  }
+});
+
+router.post('/reset-password', async (req: AuthRequest, res: Response) => {
+  try {
+    const { token, newPassword } = req.body as ResetPasswordRequest;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    await resetPassword(token, newPassword);
+    return res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+// 2FA endpoints
+router.post('/2fa/setup', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const secret = generateTOTPSecret();
+    const uri = generateTOTPUri(secret, authReq.user.username);
+    const backupCodes = await generateBackupCodes(authReq.user.id);
+
+    await pool.execute(
+      'UPDATE users SET two_factor_secret = ? WHERE id = ?',
+      [secret, authReq.user.id]
+    );
+
+    return res.json({
+      secret,
+      uri,
       backupCodes
     });
   } catch (error) {
     console.error('2FA setup error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Failed to setup 2FA' });
   }
 });
 
-// Verify and enable 2FA
-router.post('/2fa/enable', authMiddleware, async (req, res) => {
-  const { token } = req.body;
-
+router.post('/2fa/verify', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { token } = req.body as TwoFactorSetupRequest;
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT two_factor_secret FROM users WHERE id = ?',
-      [req.user.id]
+      [authReq.user.id]
     );
 
     if (rows.length === 0 || !rows[0].two_factor_secret) {
       return res.status(400).json({ error: '2FA not set up' });
     }
 
-    const isValidToken = verifyToken(rows[0].two_factor_secret, token);
+    const isValidToken = verifyTOTPToken(token, rows[0].two_factor_secret);
     if (!isValidToken) {
       return res.status(401).json({ error: 'Invalid 2FA code' });
     }
 
     await pool.execute(
       'UPDATE users SET two_factor_enabled = true WHERE id = ?',
-      [req.user.id]
+      [authReq.user.id]
     );
 
-    res.json({ message: '2FA enabled successfully' });
+    return res.json({ message: '2FA enabled successfully' });
   } catch (error) {
-    console.error('2FA enable error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('2FA verification error:', error);
+    return res.status(500).json({ error: 'Failed to verify 2FA' });
   }
 });
 
-// Request password reset
-router.post('/password/reset-request', async (req, res) => {
-  const { email } = req.body;
-
+router.post('/2fa/disable', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT id FROM users WHERE email = ? AND is_active = true',
-      [email]
-    );
-
-    if (rows.length === 0) {
-      // Don't reveal if email exists
-      return res.json({ message: 'If the email exists, a reset link will be sent' });
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const user = rows[0];
-    const token = crypto.randomBytes(32).toString('hex');
-
     await pool.execute(
-      `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
-       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))`,
-      [user.id, token]
+      'UPDATE users SET two_factor_enabled = false, two_factor_secret = NULL WHERE id = ?',
+      [authReq.user.id]
     );
 
-    await sendPasswordResetEmail(email, token);
-
-    res.json({ message: 'If the email exists, a reset link will be sent' });
+    return res.json({ message: '2FA disabled successfully' });
   } catch (error) {
-    console.error('Password reset request error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('2FA disable error:', error);
+    return res.status(500).json({ error: 'Failed to disable 2FA' });
   }
 });
 
-// Reset password
-router.post('/password/reset', async (req, res) => {
-  const { token, newPassword } = req.body;
-
+// Google OAuth endpoints
+router.post('/link/google', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const [tokens] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM password_reset_tokens 
-       WHERE token = ? 
-       AND expires_at > NOW() 
-       AND used_at IS NULL`,
-      [token]
-    );
-
-    if (tokens.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired token' });
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const resetToken = tokens[0];
-
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(newPassword, salt);
-
-    // Update password and mark token as used
-    await pool.execute(
-      'UPDATE users SET password_hash = ? WHERE id = ?',
-      [passwordHash, resetToken.user_id]
-    );
-
-    await pool.execute(
-      'UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?',
-      [resetToken.id]
-    );
-
-    // Revoke all refresh tokens for this user
-    await pool.execute(
-      'UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = ?',
-      [resetToken.user_id]
-    );
-
-    res.json({ message: 'Password reset successful' });
+    const googleProfile = req.body as GoogleLinkRequest;
+    await linkGoogleAccount(authReq.user.id, googleProfile);
+    return res.json({ message: 'Google account linked successfully' });
   } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Google link error:', error);
+    return res.status(500).json({ error: 'Failed to link Google account' });
   }
 });
 
-// Refresh token endpoint
-router.post('/refresh', async (req, res) => {
-  const { refreshToken } = req.body;
-
+router.post('/unlink/google', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const [tokens] = await pool.execute<RowDataPacket[]>(
-      `SELECT rt.*, u.username, u.role 
-       FROM refresh_tokens rt 
-       JOIN users u ON rt.user_id = u.id 
-       WHERE rt.token = ? 
-       AND rt.expires_at > NOW() 
-       AND rt.revoked_at IS NULL`,
-      [refreshToken]
-    );
-
-    if (tokens.length === 0) {
-      return res.status(401).json({ error: 'Invalid refresh token' });
+    const authReq = req as AuthRequest;
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const token = tokens[0];
-
-    const accessToken = generateToken({
-      id: token.user_id,
-      username: token.username,
-      role: token.role
-    });
-
-    res.json({ token: accessToken });
+    await unlinkGoogleAccount(authReq.user.id);
+    return res.json({ message: 'Google account unlinked successfully' });
   } catch (error) {
-    console.error('Refresh token error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Logout endpoint
-router.post('/logout', async (req, res) => {
-  const { refreshToken } = req.body;
-
-  try {
-    await pool.execute(
-      'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = ?',
-      [refreshToken]
-    );
-
-    res.status(204).send();
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Google unlink error:', error);
+    return res.status(500).json({ error: 'Failed to unlink Google account' });
   }
 });
 

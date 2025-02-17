@@ -1,0 +1,125 @@
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 20px;
+
+  .login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    h1 {
+      margin: 0 0 24px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #202124;
+      text-align: center;
+    }
+
+    .error-message {
+      padding: 12px;
+      margin-bottom: 16px;
+      background-color: #fce8e8;
+      color: #d93025;
+      border-radius: 4px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #202124;
+        transition: border-color 0.2s ease-in-out;
+
+        &:focus {
+          outline: none;
+          border-color: #1a73e8;
+        }
+
+        &:disabled {
+          background-color: #f8f9fa;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 12px 16px;
+      background-color: #1a73e8;
+      border: none;
+      border-radius: 4px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+
+      &:hover {
+        background-color: #1557b0;
+      }
+
+      &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .loading-spinner {
+        width: 18px;
+        height: 18px;
+        margin: 0 auto;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+
+      a {
+        color: #1a73e8;
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.2s ease-in-out;
+
+        &:hover {
+          color: #1557b0;
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

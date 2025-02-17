@@ -77,14 +77,20 @@ const InventoryManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | undefined) => {
+    if (!id) return; // Early return if id is undefined
     if (!window.confirm('Are you sure you want to delete this car?')) return;
 
     try {
-      await fetch(`/api/cars/${id}`, {
+      const response = await fetch(`/api/cars/${id}`, {
         method: 'DELETE',
       });
-      fetchCars();
+
+      if (!response.ok) {
+        throw new Error('Failed to delete car');
+      }
+
+      await fetchCars();
     } catch (error) {
       console.error('Error deleting car:', error);
     }

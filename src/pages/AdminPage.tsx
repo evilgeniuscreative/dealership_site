@@ -29,10 +29,10 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const validateForm = (): boolean => {
+  const validateForm = (checkTouched: boolean = true) => {
     const errors: FormErrors = {};
-    const usernameError = validateUsername(username);
-    const passwordError = validatePassword(password);
+    const usernameError = validateUsername(username, checkTouched && touchedFields.has('username'));
+    const passwordError = validatePassword(password, checkTouched && touchedFields.has('password'));
 
     if (usernameError) errors.username = usernameError;
     if (passwordError) errors.password = passwordError;
@@ -43,14 +43,14 @@ const AdminPage: React.FC = () => {
 
   const handleBlur = (field: string) => {
     setTouchedFields(prev => new Set(prev).add(field));
-    validateForm();
+    validateForm(true);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!validateForm()) {
+    if (!validateForm(false)) {
       return;
     }
 
@@ -74,12 +74,12 @@ const AdminPage: React.FC = () => {
       }
 
       const { token, refreshToken } = await response.json();
-      login(token);
+      login(token, refreshToken); 
       localStorage.setItem('refreshToken', refreshToken);
 
       const state = location.state as LocationState;
       const from = state?.from?.pathname || '/admin/inventory';
-      navigate(from);
+      navigate(from, { replace: true });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
     } finally {

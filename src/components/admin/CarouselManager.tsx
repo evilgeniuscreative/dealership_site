@@ -8,7 +8,7 @@ const CarouselManager: React.FC = () => {
     title: '',
     subtitle: '',
     imageUrl: '',
-    delay: 7000,
+    delay: 7000, // Default delay
   });
   const [selectedImage, setSelectedImage] = useState<CarouselImage | null>(null);
 
@@ -48,17 +48,22 @@ const CarouselManager: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const imageData = {
+        ...newImage,
+        delay: newImage.delay || 7000 // Ensure delay has a default value
+      };
+
       if (selectedImage) {
         await fetch(`/api/carousel-images/${selectedImage.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newImage),
+          body: JSON.stringify(imageData),
         });
       } else {
         await fetch('/api/carousel-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newImage),
+          body: JSON.stringify(imageData),
         });
       }
       
@@ -75,22 +80,32 @@ const CarouselManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) return;
+  const handleEdit = (image: CarouselImage) => {
+    setSelectedImage(image);
+    setNewImage({
+      title: image.title,
+      subtitle: image.subtitle,
+      imageUrl: image.imageUrl,
+      delay: image.delay || 7000, // Ensure delay has a default value when editing
+    });
+  };
 
+  const handleDelete = async (id: number | undefined) => {
+    if (!id) return; // Early return if id is undefined
+    
     try {
-      await fetch(`/api/carousel-images/${id}`, {
+      const response = await fetch(`/api/carousel-images/${id}`, {
         method: 'DELETE',
       });
-      fetchCarouselImages();
+
+      if (!response.ok) {
+        throw new Error('Failed to delete carousel image');
+      }
+
+      await fetchCarouselImages();
     } catch (error) {
       console.error('Error deleting carousel image:', error);
     }
-  };
-
-  const handleEdit = (image: CarouselImage) => {
-    setSelectedImage(image);
-    setNewImage(image);
   };
 
   return (
@@ -136,7 +151,7 @@ const CarouselManager: React.FC = () => {
             type="number"
             id="delay"
             value={newImage.delay || 7000}
-            onChange={(e) => setNewImage(prev => ({ ...prev, delay: Number(e.target.value) }))}
+            onChange={(e) => setNewImage(prev => ({ ...prev, delay: parseInt(e.target.value, 10) }))}
             min="1000"
             step="1000"
             required
@@ -173,7 +188,7 @@ const CarouselManager: React.FC = () => {
             <div className="carousel-manager__image-info">
               <h3>{image.title}</h3>
               <p>{image.subtitle}</p>
-              <p>Delay: {image.delay}ms</p>
+              <p>Delay: {image.delay || 7000}ms</p>
             </div>
             <div className="carousel-manager__image-actions">
               <button onClick={() => handleEdit(image)}>Edit</button>

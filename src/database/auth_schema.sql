@@ -4,17 +4,20 @@
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
     role ENUM('admin', 'manager') NOT NULL DEFAULT 'admin',
     is_active BOOLEAN NOT NULL DEFAULT true,
     two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
     two_factor_secret VARCHAR(32),
+    google_id VARCHAR(255) UNIQUE,
+    google_profile JSON,
     last_login DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_username (username),
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_google_id (google_id)
 );
 
 -- Refresh tokens for maintaining sessions

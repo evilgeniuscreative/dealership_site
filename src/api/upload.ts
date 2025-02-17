@@ -5,52 +5,43 @@ import fs from 'fs';
 
 const router = express.Router();
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../public/uploads');
-    
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Create uploads directory
+const uploadDir = path.join(__dirname, '../../public/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
+// Configure multer
 const upload = multer({
-  storage,
+  dest: uploadDir,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept only image files
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'));
-    }
-    cb(null, true);
   }
 });
 
-// Handle single file upload
-router.post('/', upload.single('image'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl });
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    res.status(500).json({ error: 'Internal server error' });
+// Handle file upload
+router.post('/', upload.single('image'), function(req, res) {
+  if (!req.file) {
+    return res.status(400).json({
+      error: 'Missing file',
+      message: 'Please provide an image file'
+    });
   }
+
+  // Validate file type
+  const allowedTypes = /\.(jpg|jpeg|png|gif)$/i;
+  if (!allowedTypes.test(req.file.originalname)) {
+    // Remove the invalid file
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({
+      error: 'Invalid file type',
+      message: 'Only image files (jpg, jpeg, png, gif) are allowed'
+    });
+  }
+
+  return res.json({
+    url: `/uploads/${req.file.filename}`
+  });
 });
 
 export default router;

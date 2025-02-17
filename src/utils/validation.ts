@@ -1,4 +1,6 @@
-export const validateUsername = (username: string): string | null => {
+export const validateUsername = (username: string, touched: boolean = false): string | null => {
+  if (!touched) return null;
+  
   if (!username) {
     return 'Username is required';
   }
@@ -14,15 +16,23 @@ export const validateUsername = (username: string): string | null => {
   return null;
 };
 
-export const validatePassword = (password: string): string | null => {
+export const validatePassword = (password: string, touched: boolean = false): string | null => {
+  if (!touched) return null;
+
   if (!password) {
     return 'Password is required';
   }
   if (password.length < 8) {
     return 'Password must be at least 8 characters long';
   }
-  if (password.length > 50) {
-    return 'Password must be less than 50 characters';
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
   }
   return null;
 };

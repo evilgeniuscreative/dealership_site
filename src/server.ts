@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import passport from 'passport';
+import session from 'express-session';
 import { authMiddleware } from './middleware/auth';
 import carsRouter from './api/cars';
 import carouselRouter from './api/carousel';
@@ -11,12 +13,30 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Set up trust proxy for rate limiting
 app.set('trust proxy', 1);
+
+// Session setup for OAuth
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Public routes
 app.use('/api/auth', authRouter);
