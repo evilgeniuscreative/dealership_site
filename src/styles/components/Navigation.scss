@@ -1,0 +1,77 @@
+@import '../common/variables';
+
+.navigation {
+  background-color: $white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: $spacing-md;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $dark-blue;
+    text-decoration: none;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: darken($dark-blue, 10%);
+    }
+  }
+
+  &__links {
+    display: flex;
+    gap: $spacing-xl;
+
+    @media (max-width: $breakpoint-md) {
+      display: none; // For mobile, we'll implement a hamburger menu
+    }
+  }
+
+  &__link {
+    color: $black;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: $spacing-xs 0;
+    position: relative;
+    transition: color 0.3s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: $dark-blue;
+      transition: width 0.3s ease;
+    }
+
+    &:hover {
+      color: $dark-blue;
+
+      &::after {
+        width: 100%;
+      }
+    }
+
+    &--active {
+      color: $dark-blue;
+
+      &::after {
+        width: 100%;
+      }
+    }
+  }
+}

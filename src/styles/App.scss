@@ -1,0 +1,13 @@
+@import './common/variables';
+@import './common/base';
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  &__main {
+    flex: 1;
+    margin-top: 60px; // Height of the navigation bar
+  }
+}

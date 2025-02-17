@@ -1,0 +1,56 @@
+@import 'variables';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-family-primary;
+  font-size: $font-size-base;
+  line-height: 1.5;
+}
+
+input,
+textarea {
+  font-family: $font-family-primary;
+  font-size: $font-size-input;
+  padding: $input-padding;
+  border: $input-border;
+  border-radius: $border-radius;
+  width: 100%;
+  
+  &:focus {
+    outline: none;
+    border-color: $dark-blue;
+  }
+}
+
+button {
+  font-family: $font-family-primary;
+  border-radius: $border-radius;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+}
+
+.page-content {
+  width: $content-width;
+  margin: 0 auto;
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-family-primary;
+  font-weight: bold;
+}

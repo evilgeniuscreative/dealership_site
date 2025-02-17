@@ -1,0 +1,77 @@
+@import '../common/variables';
+
+.contact-form {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: $spacing-xl;
+
+  &__field {
+    margin-bottom: $spacing-lg;
+
+    label {
+      display: block;
+      margin-bottom: $spacing-xs;
+      font-weight: bold;
+      color: #666;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      font-size: $font-size-input;
+      padding: $input-padding;
+      border: $input-border;
+      border-radius: $border-radius;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: $dark-blue;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+  }
+
+  &__submit {
+    width: 100%;
+    padding: $spacing-md;
+    background-color: $dark-blue;
+    color: $white;
+    border: none;
+    border-radius: $border-radius;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover:not(:disabled) {
+      background-color: darken($dark-blue, 10%);
+    }
+
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  &__message {
+    margin-top: $spacing-md;
+    padding: $spacing-md;
+    border-radius: $border-radius;
+    text-align: center;
+
+    &--success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    &--error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+  }
+}

@@ -1,0 +1,118 @@
+@import '../common/variables';
+
+.car-card {
+  display: flex;
+  flex-direction: column;
+  background-color: $white;
+  border-radius: $border-radius;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: $black;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &__image-container {
+    position: relative;
+    padding-top: 66.67%; // 3:2 aspect ratio
+    overflow: hidden;
+  }
+
+  &__image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__content {
+    padding: $spacing-md;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    margin-bottom: $spacing-sm;
+    color: $dark-blue;
+  }
+
+  &__details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__price {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+
+  &__mileage {
+    color: #666;
+  }
+
+  &__summary {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__specs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-sm;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  // Full width variant
+  &--full {
+    flex-direction: row;
+    margin-bottom: $spacing-md;
+
+    .car-card__image-container {
+      flex: 0 0 300px;
+      padding-top: 0;
+      height: 200px;
+    }
+
+    .car-card__content {
+      flex: 1;
+    }
+
+    @media (max-width: $breakpoint-md) {
+      flex-direction: column;
+
+      .car-card__image-container {
+        flex: none;
+        padding-top: 66.67%;
+      }
+    }
+  }
+
+  // Grid layout for home page
+  @media (min-width: $breakpoint-xl) {
+    width: calc(12.5% - #{$spacing-md}); // 8 cards per row
+  }
+
+  @media (max-width: $breakpoint-xl) {
+    width: calc(16.666% - #{$spacing-md}); // 6 cards per row
+  }
+
+  @media (max-width: $breakpoint-lg) {
+    width: calc(25% - #{$spacing-md}); // 4 cards per row
+  }
+
+  @media (max-width: $breakpoint-md) {
+    width: calc(33.333% - #{$spacing-md}); // 3 cards per row
+  }
+
+  @media (max-width: $breakpoint-sm) {
+    width: calc(50% - #{$spacing-md}); // 2 cards per row
+  }
+}

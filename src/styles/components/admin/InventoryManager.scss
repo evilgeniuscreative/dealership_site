@@ -1,0 +1,168 @@
+@import '../../common/variables';
+
+.inventory-manager {
+  padding: $spacing-xl;
+
+  h2 {
+    color: $dark-blue;
+    margin-bottom: $spacing-xl;
+  }
+
+  &__form {
+    background-color: $white;
+    padding: $spacing-xl;
+    border-radius: $border-radius;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: $spacing-xl;
+  }
+
+  &__form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-md;
+    margin-bottom: $spacing-xl;
+
+    @media (max-width: $breakpoint-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: $breakpoint-md) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__field {
+    margin-bottom: $spacing-md;
+
+    label {
+      display: block;
+      margin-bottom: $spacing-xs;
+      font-weight: bold;
+      color: #666;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: $input-padding;
+      border: $input-border;
+      border-radius: $border-radius;
+      font-size: $font-size-input;
+
+      &:focus {
+        outline: none;
+        border-color: $dark-blue;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-md;
+    margin-top: $spacing-xl;
+  }
+
+  &__submit,
+  &__cancel {
+    padding: $spacing-md $spacing-xl;
+    border: none;
+    border-radius: $border-radius;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  &__submit {
+    background-color: $dark-blue;
+    color: $white;
+
+    &:hover {
+      background-color: darken($dark-blue, 10%);
+    }
+  }
+
+  &__cancel {
+    background-color: #f44336;
+    color: $white;
+
+    &:hover {
+      background-color: darken(#f44336, 10%);
+    }
+  }
+
+  &__list {
+    background-color: $white;
+    padding: $spacing-xl;
+    border-radius: $border-radius;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    h3 {
+      color: $dark-blue;
+      margin-bottom: $spacing-lg;
+    }
+  }
+
+  &__table {
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th,
+      td {
+        padding: $spacing-md;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background-color: $primary-blue;
+        color: $dark-blue;
+        font-weight: bold;
+      }
+
+      button {
+        padding: $spacing-xs $spacing-md;
+        margin-right: $spacing-xs;
+        border: none;
+        border-radius: $border-radius;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+
+        &:first-child {
+          background-color: $dark-blue;
+          color: $white;
+
+          &:hover {
+            background-color: darken($dark-blue, 10%);
+          }
+        }
+
+        &:last-child {
+          background-color: #f44336;
+          color: $white;
+
+          &:hover {
+            background-color: darken(#f44336, 10%);
+          }
+        }
+      }
+    }
+  }
+
+  &__car-image {
+    width: 100px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: $border-radius;
+  }
+}

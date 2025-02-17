@@ -1,0 +1,50 @@
+@import '../common/variables';
+
+.inventory-page {
+  &__content {
+    width: $content-width;
+    margin: 0 auto;
+    padding: $spacing-xl 0;
+  }
+
+  &__search-section {
+    margin-bottom: $spacing-xl;
+  }
+
+  &__results {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  &__load-more {
+    display: block;
+    margin: $spacing-xl auto;
+    padding: $spacing-md $spacing-xl;
+    background-color: $dark-blue;
+    color: $white;
+    border: none;
+    border-radius: $border-radius;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: darken($dark-blue, 10%);
+    }
+  }
+
+  &__no-results {
+    text-align: center;
+    padding: $spacing-xl;
+    background-color: $gray;
+    border-radius: $border-radius;
+    color: #666;
+  }
+
+  @media (max-width: $breakpoint-lg) {
+    &__content {
+      width: 90%;
+    }
+  }
+}

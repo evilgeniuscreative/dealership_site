@@ -1,0 +1,43 @@
+@import '../common/variables';
+
+.home-page {
+  &__search-section {
+    padding: $spacing-xl 0;
+    background-color: $primary-blue;
+  }
+
+  &__inventory {
+    padding: $spacing-xl 0;
+  }
+
+  &__section-title {
+    text-align: center;
+    margin-bottom: $spacing-xl;
+    color: $dark-blue;
+  }
+
+  &__car-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    padding: 0 $spacing-md;
+    justify-content: center;
+  }
+
+  &__load-more {
+    display: block;
+    margin: $spacing-xl auto;
+    padding: $spacing-md $spacing-xl;
+    background-color: $dark-blue;
+    color: $white;
+    border: none;
+    border-radius: $border-radius;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: darken($dark-blue, 10%);
+    }
+  }
+}
