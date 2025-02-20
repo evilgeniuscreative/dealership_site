@@ -1,91 +1,70 @@
-import express from 'express';
+import express, { Request, Response, Router } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../services/database';
 import { CarouselImage } from '../types';
+import { authMiddleware } from '../middleware/auth';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Get all carousel images
-router.get('/', async (req, res) => {
+router.get('/', async (_req: Request, res: Response) => {
   try {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM carousel_images WHERE is_active = 1 ORDER BY display_order ASC'
-    );
-    res.json(rows);
+    const [rows] = await pool.execute<RowDataPacket[]>('SELECT * FROM carousel_images ORDER BY display_order ASC');
+    res.json(rows as CarouselImage[]);
   } catch (error) {
     console.error('Error fetching carousel images:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to fetch carousel images' });
   }
 });
 
 // Create a new carousel image
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage>, res: Response) => {
   try {
     const image: CarouselImage = req.body;
-    
-    // Get the highest display_order
-    const [orderResult] = await pool.execute<RowDataPacket[]>(
-      'SELECT MAX(display_order) as maxOrder FROM carousel_images'
-    );
-    const nextOrder = (orderResult[0].maxOrder || 0) + 1;
-
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO carousel_images (
-        image_url, title, subtitle, delay, display_order, is_active
-      ) VALUES (?, ?, ?, ?, ?, 1)`,
-      [
-        image.imageUrl,
-        image.title,
-        image.subtitle,
-        image.delay || 7000,
-        nextOrder
-      ]
+      'INSERT INTO carousel_images (title, subtitle, image_url, display_order) VALUES (?, ?, ?, ?)',
+      [image.title, image.subtitle, image.imageUrl, image.displayOrder]
     );
 
-    res.status(201).json({
-      id: result.insertId,
-      ...image,
-      display_order: nextOrder
-    });
+    const [newImage] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM carousel_images WHERE id = ?',
+      [result.insertId]
+    );
+
+    res.status(201).json(newImage[0] as CarouselImage);
   } catch (error) {
     console.error('Error creating carousel image:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to create carousel image' });
   }
 });
 
 // Update a carousel image
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req: Request<{ id: string }, {}, CarouselImage>, res: Response) => {
   try {
     const image: CarouselImage = req.body;
     const [result] = await pool.execute<ResultSetHeader>(
-      `UPDATE carousel_images SET
-        image_url = ?, title = ?, subtitle = ?, delay = ?
-      WHERE id = ?`,
-      [
-        image.imageUrl,
-        image.title,
-        image.subtitle,
-        image.delay || 7000,
-        req.params.id
-      ]
+      'UPDATE carousel_images SET title = ?, subtitle = ?, image_url = ?, display_order = ? WHERE id = ?',
+      [image.title, image.subtitle, image.imageUrl, image.displayOrder, req.params.id]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Carousel image not found' });
     }
 
-    res.json({
-      id: parseInt(req.params.id),
-      ...image
-    });
+    const [updatedImage] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM carousel_images WHERE id = ?',
+      [req.params.id]
+    );
+
+    res.json(updatedImage[0] as CarouselImage);
   } catch (error) {
     console.error('Error updating carousel image:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to update carousel image' });
   }
 });
 
 // Delete a carousel image
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req: Request<{ id: string }>, res: Response) => {
   try {
     const [result] = await pool.execute<ResultSetHeader>(
       'DELETE FROM carousel_images WHERE id = ?',
@@ -96,65 +75,10 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Carousel image not found' });
     }
 
-    // Reorder remaining images
-    await pool.execute(
-      `UPDATE carousel_images 
-       SET display_order = display_order - 1 
-       WHERE display_order > (
-         SELECT display_order FROM (
-           SELECT display_order FROM carousel_images WHERE id = ?
-         ) as subquery
-       )`,
-      [req.params.id]
-    );
-
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting carousel image:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Update carousel image order
-router.put('/:id/order', async (req, res) => {
-  try {
-    const { newOrder } = req.body;
-    const [currentImage] = await pool.execute<RowDataPacket[]>(
-      'SELECT display_order FROM carousel_images WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (currentImage.length === 0) {
-      return res.status(404).json({ error: 'Carousel image not found' });
-    }
-
-    const currentOrder = currentImage[0].display_order;
-
-    if (newOrder > currentOrder) {
-      await pool.execute(
-        `UPDATE carousel_images 
-         SET display_order = display_order - 1 
-         WHERE display_order > ? AND display_order <= ?`,
-        [currentOrder, newOrder]
-      );
-    } else {
-      await pool.execute(
-        `UPDATE carousel_images 
-         SET display_order = display_order + 1 
-         WHERE display_order >= ? AND display_order < ?`,
-        [newOrder, currentOrder]
-      );
-    }
-
-    await pool.execute(
-      'UPDATE carousel_images SET display_order = ? WHERE id = ?',
-      [newOrder, req.params.id]
-    );
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating carousel order:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to delete carousel image' });
   }
 });
 

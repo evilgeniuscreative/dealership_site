@@ -136,3 +136,15 @@ export interface RecoveryToken {
   used_at?: Date;
   created_at: Date;
 }
+
+// Search types
+export interface SearchFilters {
+  make?: string;
+  model?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  maxMileage?: number;
+  query?: string;
+  page?: string;
+  limit?: string;
+}

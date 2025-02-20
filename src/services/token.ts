@@ -61,8 +61,9 @@ export const verifyTOTPToken = (token: string, secret: string): boolean => {
 };
 
 // Generate refresh token
-export const generateRefreshToken = (): string => {
-  return crypto.randomBytes(40).toString('hex');
+export const generateRefreshToken = (userId: number): string => {
+  const token = crypto.randomBytes(32).toString('hex');
+  return token;
 };
 
 // Hash a token (for storing reset tokens, backup codes, etc.)

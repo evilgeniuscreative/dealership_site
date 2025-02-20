@@ -1,24 +1,36 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { RowDataPacket } from 'mysql2';
+import { User } from '../types';
 import pool from '../services/database';
 
-passport.serializeUser((user: any, done) => {
+// Type for the user object we store in the session
+declare global {
+  namespace Express {
+    interface User extends User {}
+  }
+}
+
+// Serialize user for the session
+passport.serializeUser<number>((user: Express.User, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser(async (id: number, done) => {
+// Deserialize user from the session
+passport.deserializeUser<number>(async (id: number, done) => {
   try {
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT * FROM users WHERE id = ?',
       [id]
     );
-    done(null, rows[0] || null);
+    const user = rows[0] as User;
+    done(null, user || null);
   } catch (error) {
     done(error, null);
   }
 });
 
+// Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -29,39 +41,30 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user already exists
-        const [existingUsers] = await pool.execute<RowDataPacket[]>(
-          'SELECT * FROM users WHERE google_id = ? OR email = ?',
-          [profile.id, profile.emails?.[0]?.value]
+        // Check if user exists
+        const [rows] = await pool.execute<RowDataPacket[]>(
+          'SELECT * FROM users WHERE google_id = ?',
+          [profile.id]
         );
 
-        if (existingUsers.length > 0) {
-          const user = existingUsers[0];
-          
-          // Update Google profile if needed
-          if (user.google_id !== profile.id) {
-            await pool.execute(
-              'UPDATE users SET google_id = ?, google_profile = ? WHERE id = ?',
-              [profile.id, JSON.stringify(profile), user.id]
-            );
-          }
-          
-          return done(null, user);
+        if (rows.length > 0) {
+          return done(null, rows[0] as User);
         }
 
-        // Create new user
+        // Create new user if doesn't exist
         const [result] = await pool.execute(
           `INSERT INTO users (
             username,
             email,
             google_id,
             google_profile,
-            is_active,
-            role
-          ) VALUES (?, ?, ?, ?, true, 'admin')`,
+            role,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?, 'user', NOW(), NOW())`,
           [
-            profile.displayName || profile.emails?.[0]?.value?.split('@')[0],
-            profile.emails?.[0]?.value,
+            profile.displayName,
+            profile.emails?.[0]?.value || '',
             profile.id,
             JSON.stringify(profile)
           ]
@@ -72,7 +75,7 @@ passport.use(
           [(result as any).insertId]
         );
 
-        done(null, newUser[0]);
+        done(null, newUser[0] as User);
       } catch (error) {
         done(error as Error, undefined);
       }

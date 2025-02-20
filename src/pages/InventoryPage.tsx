@@ -19,10 +19,17 @@ const InventoryPage: React.FC = () => {
 
   const fetchCars = async (pageNumber: number) => {
     try {
-      // TODO: Replace with actual API call
+      // Convert all filter values to strings and remove undefined values
+      const filterParams = Object.entries(activeFilters)
+        .filter(([_, value]) => value !== undefined)
+        .reduce((acc, [key, value]) => ({
+          ...acc,
+          [key]: value?.toString() || ''
+        }), {});
+
       const queryParams = new URLSearchParams({
         page: pageNumber.toString(),
-        ...activeFilters
+        ...filterParams
       });
       
       const response = await fetch(`/api/cars?${queryParams}`);

@@ -1,6 +1,6 @@
 import { RowDataPacket } from 'mysql2';
 import pool from './database';
-import { sendEmail } from './email';
+import { sendPasswordResetEmail } from './email';
 import { getPasswordResetTemplate } from './emailTemplates';
 import { generateToken, verifyToken } from './token';
 
@@ -24,7 +24,7 @@ export const initiateRecovery = async (email: string): Promise<boolean> => {
     }
 
     const user = rows[0];
-    const token = generateToken();
+    const token = generateToken({ userId: user.id, type: 'password_reset' });
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
 
@@ -39,14 +39,7 @@ export const initiateRecovery = async (email: string): Promise<boolean> => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     // Send recovery email
-    await sendEmail(
-      user.email,
-      'Password Reset Request',
-      getPasswordResetTemplate({
-        username: user.username,
-        resetLink
-      })
-    );
+    await sendPasswordResetEmail(user.email, token);
 
     return true;
   } catch (error) {
@@ -112,11 +105,7 @@ export const resetPassword = async (
     await connection.commit();
 
     // Send confirmation email
-    await sendEmail(
-      users[0].email,
-      'Password Reset Successful',
-      `Your password has been successfully reset. If you did not perform this action, please contact support immediately.`
-    );
+    await sendPasswordResetEmail(users[0].email, token);
 
     return true;
   } catch (error) {

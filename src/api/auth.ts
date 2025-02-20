@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import passport from 'passport';
@@ -40,7 +40,7 @@ import {
   AuthenticatedUser
 } from '../types';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Rate limiting setup
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -138,7 +138,13 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Generate tokens
     const token = generateToken(authenticatedUser);
-    const refreshToken = await generateRefreshToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Store refresh token in database
+    await pool.execute(
+      'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
+      [user.id, hashToken(refreshToken)]
+    );
 
     // Record successful login
     await recordLoginAttempt({ username, ip_address, success: true });
@@ -164,33 +170,38 @@ router.post('/login', async (req: Request, res: Response) => {
     return res.json(response);
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'An error occurred during login' });
   }
 });
 
 // Logout endpoint
-router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/logout', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const authReq = req as AuthRequest;
     const refreshToken = req.body.refreshToken;
     if (!refreshToken) {
       return res.status(400).json({ error: 'Refresh token required' });
     }
 
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     // Revoke the refresh token
     await pool.execute(
       'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = ? AND user_id = ?',
-      [hashToken(refreshToken), req.user?.id]
+      [hashToken(refreshToken), authReq.user.id]
     );
 
     return res.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'An error occurred during logout' });
   }
 });
 
 // Password reset endpoints
-router.post('/forgot-password', async (req: AuthRequest, res: Response) => {
+router.post('/forgot-password', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -205,7 +216,7 @@ router.post('/forgot-password', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/validate-reset-token', async (req: AuthRequest, res: Response) => {
+router.post('/validate-reset-token', async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
     if (!token) {
@@ -220,7 +231,7 @@ router.post('/validate-reset-token', async (req: AuthRequest, res: Response) => 
   }
 });
 
-router.post('/reset-password', async (req: AuthRequest, res: Response) => {
+router.post('/reset-password', async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body as ResetPasswordRequest;
     if (!token || !newPassword) {
@@ -324,7 +335,20 @@ router.post('/2fa/disable', authMiddleware, async (req: Request, res: Response) 
   }
 });
 
-// Google OAuth endpoints
+// Google OAuth routes
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req: Request, res: Response) => {
+    res.redirect('/');
+  }
+);
+
 router.post('/link/google', authMiddleware, async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
@@ -332,7 +356,11 @@ router.post('/link/google', authMiddleware, async (req: Request, res: Response) 
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const googleProfile = req.body as GoogleLinkRequest;
+    const { googleProfile } = req.body as GoogleLinkRequest;
+    if (!googleProfile || !googleProfile.id || !googleProfile.email || !googleProfile.name) {
+      return res.status(400).json({ error: 'Invalid Google profile data' });
+    }
+
     await linkGoogleAccount(authReq.user.id, googleProfile);
     return res.json({ message: 'Google account linked successfully' });
   } catch (error) {

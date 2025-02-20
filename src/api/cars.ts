@@ -1,12 +1,14 @@
-import express from 'express';
+import express, { Request, Response, Router } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../services/database';
-import { Car } from '../types';
+import { Car, SearchFilters } from '../types';
+import { authMiddleware } from '../middleware/auth';
 
-const router = express.Router();
+const router: Router = express.Router();
 
+// Public routes
 // Get all cars with pagination and filters
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request<{}, {}, {}, SearchFilters>, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
@@ -17,52 +19,44 @@ router.get('/', async (req, res) => {
 
     // Add filters if they exist
     if (req.query.make) {
-      query += ' AND make LIKE ?';
-      params.push(`%${req.query.make}%`);
+      query += ' AND make = ?';
+      params.push(req.query.make);
     }
+
     if (req.query.model) {
-      query += ' AND model LIKE ?';
-      params.push(`%${req.query.model}%`);
+      query += ' AND model = ?';
+      params.push(req.query.model);
     }
+
     if (req.query.minPrice) {
       query += ' AND price >= ?';
       params.push(req.query.minPrice);
     }
+
     if (req.query.maxPrice) {
       query += ' AND price <= ?';
       params.push(req.query.maxPrice);
     }
+
     if (req.query.maxMileage) {
       query += ' AND mileage <= ?';
       params.push(req.query.maxMileage);
     }
 
     // Add pagination
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    query += ' LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
     const [rows] = await pool.execute<RowDataPacket[]>(query, params);
-    const [countResult] = await pool.execute<RowDataPacket[]>(
-      'SELECT COUNT(*) as total FROM cars',
-      []
-    );
-
-    const total = countResult[0].total;
-    const hasMore = offset + rows.length < total;
-
-    res.json({
-      cars: rows,
-      hasMore,
-      total
-    });
+    res.json(rows as Car[]);
   } catch (error) {
     console.error('Error fetching cars:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to fetch cars' });
   }
 });
 
 // Get a single car by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT * FROM cars WHERE id = ?',
@@ -73,15 +67,16 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Car not found' });
     }
 
-    res.json(rows[0]);
+    res.json(rows[0] as Car);
   } catch (error) {
     console.error('Error fetching car:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Protected routes
 // Create a new car
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req: Request<{}, {}, Car>, res: Response) => {
   try {
     const car: Car = req.body;
     const [result] = await pool.execute<ResultSetHeader>(
@@ -116,7 +111,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update a car
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req: Request<{ id: string }, {}, Car>, res: Response) => {
   try {
     const car: Car = req.body;
     const [result] = await pool.execute<ResultSetHeader>(
@@ -157,7 +152,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a car
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req: Request<{ id: string }>, res: Response) => {
   try {
     const [result] = await pool.execute<ResultSetHeader>(
       'DELETE FROM cars WHERE id = ?',
