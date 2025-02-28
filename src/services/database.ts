@@ -1,10 +1,15 @@
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'evilgeo2_Dealers',
-  password: '06yhye4@9',
-  database: 'evilgeo2_DealerBase',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',  // Empty password for root user
+  database: process.env.DB_NAME || 'dealership_db',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

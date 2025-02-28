@@ -10,6 +10,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// General email sending function
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  html: string
+): Promise<void> => {
+  await transporter.sendMail({
+    from: `"Dealership Admin" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html
+  });
+};
+
 export const sendPasswordResetEmail = async (
   to: string,
   resetToken: string

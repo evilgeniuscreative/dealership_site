@@ -7,23 +7,34 @@ import pool from '../services/database';
 // Type for the user object we store in the session
 declare global {
   namespace Express {
-    interface User extends User {}
+    // Define User interface explicitly instead of extending
+    interface User {
+      id: number;
+      username: string;
+      email: string;
+      role: string;
+      two_factor_enabled: boolean;
+      google_id?: string;
+      created_at: Date;
+      updated_at: Date;
+      last_login?: Date;
+    }
   }
 }
 
 // Serialize user for the session
-passport.serializeUser<number>((user: Express.User, done) => {
+passport.serializeUser((user: Express.User, done) => {
   done(null, user.id);
 });
 
 // Deserialize user from the session
-passport.deserializeUser<number>(async (id: number, done) => {
+passport.deserializeUser(async (id: number, done) => {
   try {
     const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT * FROM users WHERE id = ?',
       [id]
     );
-    const user = rows[0] as User;
+    const user = rows[0] as Express.User;
     done(null, user || null);
   } catch (error) {
     done(error, null);
@@ -48,7 +59,7 @@ passport.use(
         );
 
         if (rows.length > 0) {
-          return done(null, rows[0] as User);
+          return done(null, rows[0] as Express.User);
         }
 
         // Create new user if doesn't exist
@@ -75,7 +86,7 @@ passport.use(
           [(result as any).insertId]
         );
 
-        done(null, newUser[0] as User);
+        done(null, newUser[0] as Express.User);
       } catch (error) {
         done(error as Error, undefined);
       }

@@ -38,7 +38,7 @@ declare global {
 }
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 // Middleware setup
 const corsOptions: cors.CorsOptions = {
@@ -194,10 +194,27 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // API Routes setup
-app.use('/auth', authRouter);
-app.use('/cars', carsRouter);
-app.use('/carousel-images', carouselRouter);
-app.use('/upload', uploadRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/cars', carsRouter);
+app.use('/api/carousel-images', carouselRouter);
+app.use('/api/upload', uploadRouter);
+
+// HTML Routes
+app.get('/cars', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/cars.html'));
+});
+
+app.get('/carousel-images', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/carousel-images.html'));
+});
+
+app.get('/upload', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/upload.html'));
+});
+
+app.get('/auth', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/auth.html'));
+});
 
 // Serve React app for all other routes
 app.get('*', (req: Request, res: Response) => {

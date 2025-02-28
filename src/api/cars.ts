@@ -43,9 +43,8 @@ router.get('/', async (req: Request<{}, {}, {}, SearchFilters>, res: Response) =
       params.push(req.query.maxMileage);
     }
 
-    // Add pagination
-    query += ' LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    // Add pagination - use direct values for LIMIT and OFFSET
+    query += ` LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
 
     const [rows] = await pool.execute<RowDataPacket[]>(query, params);
     res.json(rows as Car[]);

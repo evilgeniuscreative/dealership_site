@@ -44,8 +44,9 @@ export interface AuthenticatedUser {
   role: string;
 }
 
+// Update the AuthRequest interface to use Express.User
 export interface AuthRequest extends Request {
-  user?: AuthenticatedUser;
+  user?: any; // Use Express.User from the global namespace
 }
 
 // Request body types
