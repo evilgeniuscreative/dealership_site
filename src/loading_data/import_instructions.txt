@@ -16,3 +16,10 @@ The import script will:
 - Provide a count of successfully imported records and any errors
 
 Note: The script is designed to handle missing data and will not skip records that lack certain fields.
+
+To use this sql file on another computer, you would simply need to:
+
+Install MySQL
+Run the script with mysql -u root -p < setup_database.sql
+Update the .env file with the appropriate database connection details
+This will ensure that the database structure is identical across different environments.
