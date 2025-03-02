@@ -73,6 +73,23 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   }
 });
 
+// Get featured cars
+router.get('/featured', async (_req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT c.* FROM cars c
+       INNER JOIN carousel_images ci ON c.id = ci.car_id
+       WHERE ci.carousel_type = 'featured'
+       ORDER BY ci.display_order ASC`
+    );
+    
+    res.json(rows as Car[]);
+  } catch (error) {
+    console.error('Error fetching featured cars:', error);
+    res.status(500).json({ error: 'Failed to fetch featured cars' });
+  }
+});
+
 // Protected routes
 // Create a new car
 router.post('/', authMiddleware, async (req: Request<{}, {}, Car>, res: Response) => {

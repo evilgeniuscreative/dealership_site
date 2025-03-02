@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dealership Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Dealership Admin</h1>
+        <div class="alert alert-info">
+            The server is running successfully. This is a placeholder page for the admin interface.
+        </div>
+        <p>
+            The following endpoints are available:
+        </p>
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-3">Admin Pages</h5>
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">
+                        <a href="/auth" class="text-decoration-none">
+                            <strong>/auth</strong> - Authentication and Login
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="/cars" class="text-decoration-none">
+                            <strong>/cars</strong> - Car Management
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="/carousel-images" class="text-decoration-none">
+                            <strong>/carousel-images</strong> - Carousel Management
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="/upload" class="text-decoration-none">
+                            <strong>/upload</strong> - File Uploads
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5 class="mb-3">API Endpoints</h5>
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">
+                        <strong>/auth/api</strong>
+                        <ul class="list-unstyled ms-3 mt-2 small">
+                            <li>POST /login - User login</li>
+                            <li>POST /forgot-password - Request password reset</li>
+                            <li>POST /reset-password - Reset password</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>/cars/api</strong>
+                        <ul class="list-unstyled ms-3 mt-2 small">
+                            <li>GET / - List all cars</li>
+                            <li>POST / - Add new car</li>
+                            <li>GET /:id - Get car details</li>
+                            <li>PUT /:id - Update car</li>
+                            <li>DELETE /:id - Delete car</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>/carousel-images/api</strong>
+                        <ul class="list-unstyled ms-3 mt-2 small">
+                            <li>GET / - List all images</li>
+                            <li>POST / - Add new image</li>
+                            <li>DELETE /:id - Delete image</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>/upload/api</strong>
+                        <ul class="list-unstyled ms-3 mt-2 small">
+                            <li>POST / - Upload files</li>
+                            <li>GET /files - List uploaded files</li>
+                            <li>DELETE /files/:id - Delete file</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

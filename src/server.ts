@@ -53,7 +53,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static file serving
 const staticPath = path.join(__dirname, '../public');
-app.use(express.static(staticPath));
+app.use(express.static(staticPath, {
+  index: false  // Disable automatic serving of index.html
+}));
 
 // Set up trust proxy for rate limiting
 app.set('trust proxy', 1);
@@ -194,12 +196,16 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // API Routes setup
-app.use('/api/auth', authRouter);
-app.use('/api/cars', carsRouter);
-app.use('/api/carousel-images', carouselRouter);
-app.use('/api/upload', uploadRouter);
+app.use('/m/auth', authRouter);
+app.use('/m/cars', carsRouter);
+app.use('/m/carousel-images', carouselRouter);
+app.use('/m/upload', uploadRouter);
 
 // HTML Routes
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
+});
+
 app.get('/cars', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/cars.html'));
 });
@@ -218,7 +224,7 @@ app.get('/auth', (req, res) => {
 
 // Serve React app for all other routes
 app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(staticPath, 'index.html'));
+  res.sendFile(path.join(staticPath, 'user-index.html'));
 });
 
 // Error handling middleware

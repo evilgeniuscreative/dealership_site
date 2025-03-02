@@ -20,6 +20,8 @@ export interface CarouselImage {
   title: string;
   subtitle?: string;
   delay: number;
+  displayOrder?: number;
+  carousel_type?: string;
 }
 
 export interface SearchFilters {

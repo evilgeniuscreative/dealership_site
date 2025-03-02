@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeCarousel from '../components/features/Carousel/HomeCarousel';
+import FeaturedCarCarousel from '../components/features/Carousel/FeaturedCarCarousel';
 import SearchBar from '../components/features/Search/SearchBar';
 import AdvancedSearch from '../components/features/Search/AdvancedSearch';
 import CarCard from '../components/features/Cars/CarCard';
@@ -8,14 +9,16 @@ import '../styles/pages/HomePage.scss';
 
 const HomePage: React.FC = () => {
   const [cars, setCars] = useState<Car[]>([]);
+  const [featuredCars, setFeaturedCars] = useState<Car[]>([]);
   const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch initial cars and carousel images from API
+    // Fetch initial cars and carousel images from API
     fetchCars(1);
+    fetchFeaturedCars();
     fetchCarouselImages();
   }, []);
 
@@ -37,10 +40,21 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const fetchFeaturedCars = async () => {
+    try {
+      // Fetch cars marked as featured
+      const response = await fetch('/api/cars/featured');
+      const data = await response.json();
+      setFeaturedCars(data);
+    } catch (error) {
+      console.error('Error fetching featured cars:', error);
+    }
+  };
+
   const fetchCarouselImages = async () => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/carousel-images');
+      // Fetch carousel images with type 'main'
+      const response = await fetch('/api/carousel-images?type=main');
       const data = await response.json();
       setCarouselImages(data);
     } catch (error) {
@@ -82,6 +96,11 @@ const HomePage: React.FC = () => {
 
       <div className="home-page__inventory">
         <h2 className="home-page__section-title">Featured Vehicles</h2>
+        
+        {/* Replace car grid with featured car carousel */}
+        <FeaturedCarCarousel cars={featuredCars} itemsPerSlide={3} />
+        
+        <h2 className="home-page__section-title mt-5">All Inventory</h2>
         <div className="home-page__car-grid">
           {cars.map(car => (
             <CarCard key={car.id} car={car} />
