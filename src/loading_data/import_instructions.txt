@@ -1,0 +1,18 @@
+CSV IMPORT PROCESS INSTRUCTIONS
+
+After making manual changes to the CSV file, follow these steps to import the data:
+
+1. Run the transformation script to process the updated CSV file:
+   cd /Users/iankleinfeld/Documents/WebProjects/Projects/dealership/src/loading_data && node transform_csv.js
+
+2. Run the import script to load the data into the database:
+   cd /Users/iankleinfeld/Documents/WebProjects/Projects/dealership && node src/loading_data/import_cars.js
+
+The import script will:
+- Extract make, model, and year from the title
+- Extract price from the Price field
+- Extract mileage and color from the Summary field
+- Import all records into the database, even those with missing data
+- Provide a count of successfully imported records and any errors
+
+Note: The script is designed to handle missing data and will not skip records that lack certain fields.
