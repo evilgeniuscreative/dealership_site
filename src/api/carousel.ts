@@ -24,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create a new carousel image
-router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { car_id?: number }>, res: Response) => {
+router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { car_id?: number, carousel_type?: string }>, res: Response) => {
   try {
     const image = req.body;
     
@@ -54,7 +54,7 @@ router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { c
 });
 
 // Update a carousel image
-router.put('/:id', authMiddleware, async (req: Request<{ id: string }, {}, CarouselImage & { car_id?: number }>, res: Response) => {
+router.put('/:id', authMiddleware, async (req: Request<{ id: string }, {}, CarouselImage & { car_id?: number, carousel_type?: string }>, res: Response) => {
   try {
     const image = req.body;
     
