@@ -6,8 +6,8 @@ import tty
 import os
 import json
 
-input_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/car_listings.csv'
-output_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/car_listings_new.csv'
+input_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/car_listings_new.csv'
+output_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/car_listings_processed.csv'
 approved_addresses_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/approved_addresses.json'
 rejected_addresses_file = '/Users/iankleinfeld/Documents/WebProjects/Projects/dealership/public/templates/rejected_addresses.json'
 
@@ -64,6 +64,13 @@ def clean_body_text(text, row_id):
     print(f"\nProcessing row ID: {row_id}")
     original_text = text
     
+    # Remove HTML entities and unwanted quote characters
+    text = re.sub(r'&[a-zA-Z]+;', '', text)  # Remove HTML entities
+    text = re.sub(r'["""]', '', text)  # Remove various quote characters
+    
+    # Words that should be preserved in their exact case
+    preserve_exact_case = ['A5', 'Z3', 'Z4', 'WD', 'LE', 'CL', 'GT', 'LI', 'AC', 'CDL', 'SUV', 'H4', 'SE', 'XLT', 'SD', 'DR', 'LX', 'AMD', 'X3', 'X4', 'X6M', 'CR-V', 'GLE', 'EX', 'LTD', 'GLS', 'GT1', 'LR4', 'HSE', '4WD', 'CX-5', '4Runner', 'Q5', 'Q7', 'ES350', 'XC90', 'H2', 'HR-V', 'RX350', 'RX', 'CRV HR-V', 'HS', '250H', 'GX', 'E-PACE', 'RAV4', 'X6M', 'PZEV', '4MATIC', 'Trailblazer', 'Terrastar', 'Diesel', 'Dump', 'Truck', 'Edge', 'Limited', 'Sienna']
+    
     # 1. Remove phone numbers (various formats)
     phone_pattern = r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
     phones = re.findall(phone_pattern, text)
@@ -93,17 +100,17 @@ def clean_body_text(text, row_id):
         print(f"Removing www URLs: {', '.join(www_urls)}")
     text = re.sub(www_pattern, '', text)
     
-    # 3.1 Remove "google map" and the special character after it
-    google_map_pattern = r'google map\s*[\u2000-\u206F\u2E00-\u2E7F\\\\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]?'
+    # 3.1 Remove "google map" and any characters that follow it
+    google_map_pattern = r'google map\s*[^\s]*'
     if re.search(google_map_pattern, text, re.IGNORECASE):
         print(f"Removing 'google map' and special characters")
     text = re.sub(google_map_pattern, '', text, flags=re.IGNORECASE)
-    
-    # Also try a more aggressive pattern for "google map" with any trailing characters
-    google_map_pattern2 = r'google map\s*.*?(?=\s{2,}|$)'
-    if re.search(google_map_pattern2, text, re.IGNORECASE):
-        print(f"Removing 'google map' with trailing content")
-    text = re.sub(google_map_pattern2, '', text, flags=re.IGNORECASE)
+
+    # More aggressive pattern to catch any remaining instances of "google map"
+    text = re.sub(r'google map\s*', '', text, flags=re.IGNORECASE)
+
+    # Also remove "google maps" variation
+    text = re.sub(r'google maps\s*', '', text, flags=re.IGNORECASE)
     
     # 3.2 Remove asterisks and more than two hyphens in a row
     text = re.sub(r'\*+', '', text)  # Remove all asterisks
@@ -126,21 +133,87 @@ def clean_body_text(text, row_id):
     # 4. Find and ask for approval to remove addresses
     # More inclusive address pattern to catch various formats
     address_pattern = r'\b\d+\s+[A-Za-z0-9\s,]+(?:Street|St|Road|Rd|Way|Wy|Drive|Dr|Ave|Avenue|Circle|Cir|Lane|Ln|Route|Rt|Boulevard|Blvd|Highway|Hwy|Parkway|Pkwy|Court|Ct|Place|Pl|Terrace|Ter|Trail|Trl)\.?(?:\s*[,\s]\s*[A-Za-z]+(?:\s*[A-Za-z]+)*)?(?:\s*[,\s]\s*[A-Z]{2})?(?:\s*\d{5})?\b'
-    
+
     # Also look for addresses in the format "STREET CITY ZIP" without street type
     alt_address_pattern = r'\b\d+\s+[A-Za-z]+\s+[A-Za-z]+\s+[A-Za-z]+\d{5}\b'
+
+    # Street/road name pattern (like "EUCLID AVENUE" or "LIBERIA AVENUE")
+    street_name_pattern = r'\b[A-Za-z]+\s+(?:Avenue|Ave|Street|St|Road|Rd|Lane|Ln|Drive|Dr|Boulevard|Blvd|Highway|Hwy|Route|Rt|Circle|Cir|Court|Ct|Place|Pl|Square|Sq|Terrace|Ter|Way|Parkway|Pkwy|Alley|Aly|Bridge|Brg|Trail|Trl|Hill)\b'
+
+    # Additional pattern for street names in ALL CAPS
+    all_caps_street_pattern = r'\b[A-Z]{2,}\s+(?:AVENUE|AVE|STREET|ST|ROAD|RD|LANE|LN|DRIVE|DR|BOULEVARD|BLVD|HIGHWAY|HWY|ROUTE|RT|CIRCLE|CIR|COURT|CT|PLACE|PL|SQUARE|SQ|TERRACE|TER|WAY|PARKWAY|PKWY|ALLEY|ALY|BRIDGE|BRG|TRAIL|TRL|HILL)\b'
+
+    # Pattern for "X near Y" street names (like "EUCLID AVENUE near LIBERIA AVENUE")
+    near_pattern = r'\b[A-Za-z]+\s+(?:Avenue|Ave|Street|St|Road|Rd|Lane|Ln|Drive|Dr|Boulevard|Blvd|Highway|Hwy|Route|Rt|Circle|Cir|Court|Ct|Place|Pl|Square|Sq|Terrace|Ter|Way|Parkway|Pkwy|Alley|Aly|Bridge|Brg|Trail|Trl|Hill)\s+(?:near|@)\s+[A-Za-z]+\s+(?:Avenue|Ave|Street|St|Road|Rd|Lane|Ln|Drive|Dr|Boulevard|Blvd|Highway|Hwy|Route|Rt|Circle|Cir|Court|Ct|Place|Pl|Square|Sq|Terrace|Ter|Way|Parkway|Pkwy|Alley|Aly|Bridge|Brg|Trail|Trl|Hill)\b'
+
+    # Additional pattern for "X near Y" street names in ALL CAPS
+    all_caps_near_pattern = r'\b[A-Z]{2,}\s+(?:AVENUE|AVE|STREET|ST|ROAD|RD|LANE|LN|DRIVE|DR|BOULEVARD|BLVD|HIGHWAY|HWY|ROUTE|RT|CIRCLE|CIR|COURT|CT|PLACE|PL|SQUARE|SQ|TERRACE|TER|WAY|PARKWAY|PKWY|ALLEY|ALY|BRIDGE|BRG|TRAIL|TRL|HILL)\s+(?:NEAR|@)\s+[A-Z]{2,}\s+(?:AVENUE|AVE|STREET|ST|ROAD|RD|LANE|LN|DRIVE|DR|BOULEVARD|BLVD|HIGHWAY|HWY|ROUTE|RT|CIRCLE|CIR|COURT|CT|PLACE|PL|SQUARE|SQ|TERRACE|TER|WAY|PARKWAY|PKWY|ALLEY|ALY|BRIDGE|BRG|TRAIL|TRL|HILL)\b'
+
+    # New pattern for addresses with street numbers but without state/zip
+    street_number_pattern = r'\b\d+\s+[A-Za-z0-9\s,]+(?:Street|St|Road|Rd|Way|Wy|Drive|Dr|Ave|Avenue|Circle|Cir|Lane|Ln|Route|Rt|Boulevard|Blvd|Highway|Hwy|Parkway|Pkwy|Court|Ct|Place|Pl|Terrace|Ter|Trail|Trl|Hill)\.?\b'
+
+    # Simple street number pattern (like "1081 Entry Drive" or "7216 Centerville Road")
+    simple_address_pattern = r'\b\d+\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s+(?:Drive|Dr|Road|Rd|Street|St|Lane|Ln|Ave|Avenue|Circle|Cir|Way|Wy|Boulevard|Blvd|Highway|Hwy|Parkway|Pkwy|Court|Ct|Place|Pl|Terrace|Ter|Trail|Trl|Hill)\b'
+
+    # Pattern for addresses with directional indicators
+    directional_address_pattern = r'\b\d+\s+(?:North|South|East|West|N\.|S\.|E\.|W\.)\s+[A-Za-z0-9\s,]+(?:Street|St|Road|Rd|Way|Wy|Drive|Dr|Ave|Avenue|Circle|Cir|Lane|Ln|Route|Rt|Boulevard|Blvd|Highway|Hwy|Parkway|Pkwy|Court|Ct|Place|Pl|Terrace|Ter|Trail|Trl)\.?\b'
+    directional_address_pattern_2 = r'\b\d+\s+[A-Za-z0-9\s,]+(?:Street|St|Road|Rd|Way|Wy|Drive|Dr|Ave|Avenue|Circle|Cir|Lane|Ln|Route|Rt|Boulevard|Blvd|Highway|Hwy|Parkway|Pkwy|Court|Ct|Place|Pl|Terrace|Ter|Trail|Trl)\s+(?:North|South|East|West|N\.?|S\.?|E\.?|W\.?)\.?\b'
+
+    # Define street types with their possible variations
+    street_types = [
+        r'Avenue|Ave\.?|AVE\.?',
+        r'Street|St\.?|ST\.?',
+        r'Road|Rd\.?|RD\.?',
+        r'Lane|Ln\.?|LN\.?',
+        r'Drive|Dr\.?|DR\.?',
+        r'Boulevard|Blvd\.?|BLVD\.?',
+        r'Highway|Hwy\.?|HWY\.?',
+        r'Route|Rt\.?|RT\.?',
+        r'Circle|Cir\.?|CIR\.?',
+        r'Court|Ct\.?|CT\.?',
+        r'Place|Pl\.?|PL\.?',
+        r'Square|Sq\.?|SQ\.?',
+        r'Terrace|Ter\.?|TER\.?',
+        r'Way|Wy\.?|WY\.?',
+        r'Parkway|Pkwy\.?|PKWY\.?',
+        r'Alley|Aly\.?|ALY\.?',
+        r'Bridge|Brg\.?|BRG\.?',
+        r'Trail|Trl\.?|TRL\.?',
+        r'Hill|HILL'
+    ]
+    
+    # Join the street types with OR for regex
+    street_types_pattern = '|'.join(street_types)
     
     # Street/road name pattern (like "EUCLID AVENUE" or "LIBERIA AVENUE")
-    street_name_pattern = r'\b[A-Za-z]+\s+(?:Avenue|Ave|Street|St|Road|Rd|Lane|Ln|Drive|Dr|Boulevard|Blvd|Highway|Hwy|Route|Rt|Circle|Cir|Court|Ct|Place|Pl|Square|Sq|Terrace|Ter|Way|Parkway|Pkwy|Alley|Aly|Bridge|Brg|Trail|Trl)\b'
+    street_name_pattern = r'\b[A-Za-z]+\s+(?:' + street_types_pattern + r')\b'
     
     # Additional pattern for street names in ALL CAPS
-    all_caps_street_pattern = r'\b[A-Z]{2,}\s+(?:AVENUE|AVE|STREET|ST|ROAD|RD|LANE|LN|DRIVE|DR|BOULEVARD|BLVD|HIGHWAY|HWY|ROUTE|RT|CIRCLE|CIR|COURT|CT|PLACE|PL|SQUARE|SQ|TERRACE|TER|WAY|PARKWAY|PKWY|ALLEY|ALY|BRIDGE|BRG|TRAIL|TRL)\b'
+    all_caps_street_pattern = r'\b[A-Z]{2,}\s+(?:' + street_types_pattern + r')\b'
     
+    # Pattern for "X near Y" street names (like "EUCLID AVENUE near LIBERIA AVENUE")
+    near_pattern = r'\b[A-Za-z]+\s+(?:' + street_types_pattern + r')\s+(?:near|@)\s+[A-Za-z]+\s+(?:' + street_types_pattern + r')\b'
+    
+    # Additional pattern for "X near Y" street names in ALL CAPS
+    all_caps_near_pattern = r'\b[A-Z]{2,}\s+(?:' + street_types_pattern + r')\s+(?:NEAR|@)\s+[A-Z]{2,}\s+(?:' + street_types_pattern + r')\b'
+    
+    # New pattern for addresses with street numbers but without state/zip
+    street_number_pattern = r'\b\d+\s+[A-Za-z0-9\s,]+(?:' + street_types_pattern + r')\.?\b'
+    
+    # Simple street number pattern (like "1081 Entry Drive" or "7216 Centerville Road")
+    simple_address_pattern = r'\b\d+\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s+(?:' + street_types_pattern + r')\b'
+    
+    # Pattern for addresses with directional indicators
+    directional_address_pattern = r'\b\d+\s+(?:North|South|East|West|N\.?|S\.?|E\.?|W\.?)\s+[A-Za-z0-9\s,]+(?:' + street_types_pattern + r')\.?\b'
+    directional_address_pattern_2 = r'\b\d+\s+[A-Za-z0-9\s,]+(?:' + street_types_pattern + r')\s+(?:North|South|East|West|N\.?|S\.?|E\.?|W\.?)\.?\b'
+
     # Find street/road names
     street_names = list(re.finditer(street_name_pattern, text, re.IGNORECASE))
     all_caps_streets = list(re.finditer(all_caps_street_pattern, text))
-    all_street_matches = street_names + all_caps_streets
-    
+    near_streets = list(re.finditer(near_pattern, text, re.IGNORECASE))
+    all_caps_near_streets = list(re.finditer(all_caps_near_pattern, text))
+    all_street_matches = street_names + all_caps_streets + near_streets + all_caps_near_streets
+
     for match in all_street_matches:
         street = match.group(0)
         print(f"Removing street name: {street}")
@@ -182,7 +255,8 @@ def clean_body_text(text, row_id):
     # Find all potential addresses from both patterns
     addresses_main = list(re.finditer(address_pattern, text, re.IGNORECASE))
     addresses_alt = list(re.finditer(alt_address_pattern, text, re.IGNORECASE))
-    all_addresses = addresses_main + addresses_alt
+    simple_addresses = list(re.finditer(simple_address_pattern, text, re.IGNORECASE))
+    all_addresses = addresses_main + addresses_alt + simple_addresses
     
     # For each address found, ask for approval to remove
     for match in all_addresses:
@@ -307,42 +381,21 @@ def clean_body_text(text, row_id):
     # Apply the case conversion with exceptions
     text = re.sub(r'\b[A-Z]{3,}\b', convert_case, text)
     
-    # Convert Title Case to Sentence case
-    # Split text into sentences
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    processed_sentences = []
-    
+    # Convert ALL CAPS to Sentence case
+    sentences = re.split(r'([.!?]\s+)', text)
+    new_text = ""
     for sentence in sentences:
-        # Skip empty sentences
-        if not sentence.strip():
-            continue
-            
-        # Convert Title Case words to lowercase except for the first word of the sentence
-        words = sentence.split()
-        if not words:
-            continue
-            
-        # Keep the first word as is (might already be capitalized)
-        processed_words = [words[0]]
-        
-        # Process the rest of the words
-        for word in words[1:]:
-            # Skip preserved words
-            if any(word.upper() == preserve for preserve in preserve_caps):
-                processed_words.append(word)
-                continue
-                
-            # Check if word is in Title Case (first letter uppercase, rest lowercase)
-            if len(word) > 1 and word[0].isupper() and word[1:].islower():
-                print(f"Converting Title Case to sentence case: {word}")
-                processed_words.append(word.lower())
-            else:
-                processed_words.append(word)
-                
-        processed_sentences.append(' '.join(processed_words))
+        if sentence.isupper():
+            sentence = sentence.lower()
+            if sentence.strip():
+                sentence = sentence[0].upper() + sentence[1:]
+        elif re.match(r'^[a-z]', sentence.strip()):
+            # If sentence starts with lowercase, capitalize it
+            if sentence.strip():
+                sentence = sentence[0].upper() + sentence[1:]
+        new_text += sentence
     
-    # Join sentences back together
-    text = ' '.join(processed_sentences)
+    text = new_text
     
     # Ensure the first character of the entire text is capitalized
     if text and text[0].isalpha():
@@ -372,7 +425,23 @@ def clean_body_text(text, row_id):
         r'\.{3}\s+\.{3}',
         r'walk around video on YouTube link',
         r'BAD CREDIT|NO CREDIT|REPOS|BANKRUPTCY|WE GOT YOU COVERED',
-        r'We offer GUARANTEED APPROVAL FOR EVERYONE!!!'
+        r'We offer GUARANTEED APPROVAL FOR EVERYONE!!!',
+        r'Click here to view on dealer\'s website',
+        r'To view on dealer\'s website',
+        r'Click here to view',
+        r'To view',
+        r'Please visit our website \([^)]*\)',
+        r'Please visit our website',
+        r'For more info please copy and paste below link in your browser',
+        r'Stock number:[^,]*',
+        r'number:[^,]*',
+        r'stock #:[^,]*',
+        r'W OR:',
+        r'Money-Back guarantee is valid for[^.]*',
+        r'Honda description',
+        r'subject to prior sale\.',
+        r'to confirm availability\.',
+        r'fuel: :'
     ]
     
     for phrase in phrases_to_remove:
@@ -394,6 +463,45 @@ def clean_body_text(text, row_id):
         print(f"Converting ALL CAPS to Title Case: {word} -> {title_case_word}")
         text = text.replace(word, title_case_word)
     
+    # Clean up extra whitespace and fix formatting issues
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove any leftover parentheses that might be from website removal
+    text = re.sub(r'\(\s*\)', '', text)
+    text = re.sub(r'our website \(', 'our website', text)
+    
+    # Fix any double punctuation or spacing issues
+    text = re.sub(r'\s+\.', '.', text)
+    text = re.sub(r'\s+,', ',', text)
+    text = re.sub(r'\s+:', ':', text)
+    text = re.sub(r':\s+:', ':', text)  # Fix double colons
+    text = re.sub(r'fuel:\s*:', 'fuel:', text)  # Fix "fuel: :" issue
+    
+    # Remove any incomplete sentences about guarantees
+    text = re.sub(r'Money-Back [Gg]uarantee is valid for[^.]*\.?', '', text)
+    
+    # Remove any leftover references to viewing on websites
+    text = re.sub(r'To on', '', text)
+    text = re.sub(r'To view', '', text)
+    text = re.sub(r'Click here', '', text)
+    
+    # Remove stock number references that might be causing issues
+    text = re.sub(r'[Ss]tock [Nn]umber:?\s*[A-Z0-9]+\s*', '', text)
+    text = re.sub(r'[Ss]tock #:?\s*[A-Z0-9]+\s*', '', text)
+    
+    # Remove Honda references in non-Honda vehicles
+    if 'Honda' not in text[:50] and 'Honda' in text:
+        text = re.sub(r'Honda description', 'description', text)
+        text = re.sub(r'Honda \.', '.', text)
+    
+    text = text.strip()
+    
+    # Ensure exact case words are preserved
+    for exact_word in preserve_exact_case:
+        # Use word boundary markers \b to ensure we only match whole words
+        pattern = re.compile(r'\b' + re.escape(exact_word) + r'\b', re.IGNORECASE)
+        text = pattern.sub(exact_word, text)
+    
     return text
 
 print("This script will remove the URL column and clean the bodyText field.")
@@ -409,24 +517,203 @@ with open(input_file, 'r', newline='', encoding='utf-8') as infile, \
     reader = csv.reader(infile)
     writer = csv.writer(outfile)
     
+    # Words that should not be converted to lowercase
+    do_not_lowercase = ['Trailblazer', 'Cayenne', 'Mercedes','S-Class','Mercedes-Benz','Yukon','GMC','Dodge','Ram','International', 'Terrastar','Toyota','Highlander','BMW', 'Nissan', 'Versa', 'Altima', 'Honda', 'Chevy', 'Ford', 'Chevrolet', 'Tundra', 'Traverse', 'Lexus', 'RX','Mazda','Porsche','Cayenne','Camry','Acura','Accord','Chevy','Altima','Land','Rover','Range','Rover','Sports','Limited','Black','Edition','Special','RAV4','X3','X5','Z3']
+    
+    # Street/road words that should be capitalized in addresses
+    address_words = ['avenue', 'road', 'street', 'way', 'drive', 'boulevard', 'lane', 'circle', 'court', 'place', 'terrace', 'parkway', 'hill']
+    
+    # Words that should be preserved in their exact case
+    preserve_exact_case = ['VIN','A5', 'Z3', 'Z4', 'WD', 'LE', 'CL', 'GT', 'LI', 'AC', 'CDL', 'SUV', 'H4', 'SE', 'XLT', 'SD', 'DR', 'LX', 'AMD', 'X3', 'X4', 'X6M', 'CR-V', 'GLE', 'EX', 'LTD', 'GLS', 'GT1', 'LR4', 'HSE', '4WD', 'CX-5', '4Runner', 'Q5', 'Q7', 'ES350', 'XC90', 'H2', 'HR-V', 'RX350', 'RX', 'CRV HR-V', 'HS', '250H', 'GX', 'E-PACE', 'RAV4', 'X6M', 'PZEV', '4MATIC', 'Trailblazer', 'Terrastar', 'Diesel', 'Dump', 'Truck', 'Edge', 'Limited', 'Sienna']
+    
     # Process each row
     for i, row in enumerate(reader):
         if i == 0:  # Header row
-            # Get the index of the 'url' column
-            url_index = row.index('url')
+            # Get the indices of columns
+            # Check if 'url' column exists
+            url_index = -1
+            try:
+                url_index = row.index('url')
+            except ValueError:
+                print("No 'url' column found, skipping URL removal")
+            
             # Get the index of the 'bodyText' column
             body_text_index = row.index('bodyText')
-            # Create a new row without the 'url' column
-            new_row = row[:url_index] + row[url_index+1:]
-            print(f"Removing URL column (index {url_index})")
+            # Get the index of the 'model' column
+            model_index = row.index('model')
+            # Get the index of the 'title' column
+            title_index = row.index('title')
+            # Get the index of the 'make' column
+            make_index = row.index('make')
+            # Get the index of the 'carAttrs' column
+            car_attrs_index = row.index('carAttrs')
+            
+            # Create a new row without the 'url' column if it exists
+            if url_index >= 0:
+                new_row = row[:url_index] + row[url_index+1:]
+                print(f"Removing URL column (index {url_index})")
+            else:
+                new_row = row
         else:
-            # For data rows, remove the column at the same index
-            new_row = row[:url_index] + row[url_index+1:]
+            # For data rows, remove the column at the same index if it exists
+            if url_index >= 0:
+                new_row = row[:url_index] + row[url_index+1:]
+            else:
+                new_row = row
+            
+            # Process all columns to remove asterisks
+            for j in range(len(new_row)):
+                if isinstance(new_row[j], str):
+                    new_row[j] = new_row[j].replace('*', '')
+            
+            # Clean the make field - convert to Title Case while preserving special words
+            if len(new_row) > make_index - 1:  # Adjust index since we removed url column
+                make_text = new_row[make_index - 1]
+                # Convert to Title Case while preserving special words
+                make_words = make_text.split()
+                new_make_words = []
+                
+                for word in make_words:
+                    # Check if this word exactly matches any in our preserve list (case-insensitive)
+                    exact_match = False
+                    for exact_word in preserve_exact_case:
+                        if word.upper() == exact_word.upper():
+                            new_make_words.append(exact_word)  # Use the exact case from our list
+                            exact_match = True
+                            break
+                    
+                    # If not an exact match, convert to Title Case
+                    if not exact_match:
+                        new_make_words.append(word.title())
+                
+                # Join words back together
+                new_row[make_index - 1] = ' '.join(new_make_words)
+            
+            # Clean the model field - convert to Title Case while preserving special words
+            if len(new_row) > model_index - 1:  # Adjust index since we removed url column
+                model_text = new_row[model_index - 1]
+                
+                # Remove "one owner low miles" case-insensitive
+                model_text = re.sub(r'(?i)one owner low miles', '', model_text).strip()
+                
+                # Convert to Title Case while preserving special words
+                model_words = model_text.split()
+                new_model_words = []
+                
+                for word in model_words:
+                    # Check if this word exactly matches any in our preserve list (case-insensitive)
+                    exact_match = False
+                    for exact_word in preserve_exact_case:
+                        if word.upper() == exact_word.upper():
+                            new_model_words.append(exact_word)  # Use the exact case from our list
+                            exact_match = True
+                            break
+                    
+                    # If not an exact match, convert to Title Case
+                    if not exact_match:
+                        new_model_words.append(word.title())
+                
+                # Join words back together
+                new_row[model_index - 1] = ' '.join(new_model_words)
+            
+            # Clean the title field - convert to Title Case while preserving special words
+            if len(new_row) > title_index - 1:  # Adjust index since we removed url column
+                title_text = new_row[title_index - 1]
+                
+                # First convert all words to Title Case
+                title_words = title_text.split()
+                new_title_words = []
+                
+                for word in title_words:
+                    # Check if this word exactly matches any in our preserve list (case-insensitive)
+                    exact_match = False
+                    for exact_word in preserve_exact_case:
+                        if word.upper() == exact_word.upper():
+                            new_title_words.append(exact_word)  # Use the exact case from our list
+                            exact_match = True
+                            break
+                    
+                    # If not an exact match, convert to Title Case
+                    if not exact_match:
+                        # Force all uppercase words to be properly Title Case
+                        new_title_words.append(word.title())
+                
+                # Join words back together
+                new_row[title_index - 1] = ' '.join(new_title_words)
             
             # Clean the bodyText field if it exists
             if len(new_row) > body_text_index - 1:  # Adjust index since we removed url column
                 body_text = new_row[body_text_index - 1]
-                new_row[body_text_index - 1] = clean_body_text(body_text, row[0])  # Pass row ID for logging
+                
+                # Remove HTML entities and unwanted quote characters
+                body_text = re.sub(r'&[a-zA-Z]+;', '', body_text)  # Remove HTML entities
+                body_text = re.sub(r'["""]', '', body_text)  # Remove various quote characters
+                
+                # Clean the body text
+                new_row[body_text_index - 1] = clean_body_text(body_text, row[0])
+        
+            # Clean car attributes text
+            if i > 0 and car_attrs_index - 1 < len(new_row):
+                value = new_row[car_attrs_index - 1]
+                
+                # Remove 'google map' and extra spaces
+                value = re.sub(r'google map\s*', '', value, flags=re.IGNORECASE)
+                
+                # Remove HTML entities and other unwanted characters
+                value = re.sub(r'&[a-zA-Z]+;', '', value)  # Remove HTML entities
+                value = re.sub(r'["""]', '', value)  # Remove various quote characters
+                
+                # Convert to Title Case while preserving special words
+                attr_words = value.split()
+                new_attr_words = []
+                
+                for word in attr_words:
+                    # Check if this word exactly matches any in our preserve list (case-insensitive)
+                    exact_match = False
+                    for exact_word in preserve_exact_case:
+                        if word.upper() == exact_word.upper():
+                            new_attr_words.append(exact_word)  # Use the exact case from our list
+                            exact_match = True
+                            break
+                    
+                    # If not an exact match, convert to Title Case
+                    if not exact_match:
+                        new_attr_words.append(word.title())
+                
+                # Join words back together
+                new_value = ' '.join(new_attr_words)
+                
+                # Handle addresses with street/road names and "near" phrases
+                # Match patterns like "EUCLID AVENUE near LIBERIA AVENUE"
+                for address_word in address_words:
+                    # Find all instances of address words in all caps followed by another word
+                    pattern = r'\b([A-Z]+\s+' + address_word.upper() + r'(?:\s+(?:near|@)\s+[A-Z]+\s+' + address_word.upper() + r')?)\b'
+                    matches = re.findall(pattern, new_value, re.IGNORECASE)
+                    
+                    for match in matches:
+                        # Remove the address
+                        new_value = new_value.replace(match, '')
+                
+                # Handle address with unit numbers (e.g., "25280 PLEASANT VALLEY ROAD UNIT 174")
+                unit_pattern = r'\b(\d+\s+[A-Z]+(?:\s+[A-Z]+)*\s+(?:' + '|'.join(address_words).upper() + r')\s+UNIT\s+\d+)\b'
+                unit_matches = re.findall(unit_pattern, new_value, re.IGNORECASE)
+                
+                for match in unit_matches:
+                    # Remove the address
+                    new_value = new_value.replace(match, '')
+                
+                # Handle addresses with street numbers
+                street_number_pattern = r'\b\d+\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s+(?:' + '|'.join(address_words) + r')\b'
+                street_number_matches = re.findall(street_number_pattern, new_value, re.IGNORECASE)
+                
+                for match in street_number_matches:
+                    # Remove the address
+                    new_value = new_value.replace(match, '')
+                
+                # Clean up any double spaces
+                new_value = re.sub(r'\s+', ' ', new_value).strip()
+                
+                new_row[car_attrs_index - 1] = new_value
         
         # Write the modified row
         writer.writerow(new_row)
