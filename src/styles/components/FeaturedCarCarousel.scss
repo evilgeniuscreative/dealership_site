@@ -54,6 +54,45 @@
     }
   }
   
+  // Large side navigation arrows
+  &__side-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
+      transform: translateY(-50%) scale(1.1);
+    }
+    
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+    }
+    
+    &--prev {
+      left: -25px;
+    }
+    
+    &--next {
+      right: -25px;
+    }
+  }
+  
   &__indicators {
     display: flex;
     gap: 0.5rem;
@@ -83,6 +122,20 @@
     &__item {
       width: 100%;
       margin-bottom: 1rem;
+    }
+    
+    &__side-nav {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      
+      &--prev {
+        left: 5px;
+      }
+      
+      &--next {
+        right: 5px;
+      }
     }
   }
 }

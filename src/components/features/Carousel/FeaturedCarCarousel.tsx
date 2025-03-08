@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Car } from '../../../types';
 import CarCard from '../Cars/CarCard';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import '../../../styles/components/FeaturedCarCarousel.scss';
 
 interface FeaturedCarCarouselProps {
@@ -36,6 +37,27 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
 
   return (
     <div className="featured-car-carousel">
+      {/* Large side navigation arrows */}
+      {totalSlides > 1 && (
+        <>
+          <button 
+            className="featured-car-carousel__side-nav featured-car-carousel__side-nav--prev"
+            onClick={handlePrev}
+            aria-label="Previous slide"
+          >
+            <FaChevronLeft />
+          </button>
+          
+          <button 
+            className="featured-car-carousel__side-nav featured-car-carousel__side-nav--next"
+            onClick={handleNext}
+            aria-label="Next slide"
+          >
+            <FaChevronRight />
+          </button>
+        </>
+      )}
+
       <div className="featured-car-carousel__container">
         <div className="featured-car-carousel__slide">
           {getCurrentCars().map((car) => (
@@ -48,14 +70,6 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
       
       {totalSlides > 1 && (
         <div className="featured-car-carousel__controls">
-          <button 
-            className="featured-car-carousel__control featured-car-carousel__control--prev"
-            onClick={handlePrev}
-            aria-label="Previous slide"
-          >
-            <span aria-hidden="true">&lsaquo;</span>
-          </button>
-          
           <div className="featured-car-carousel__indicators">
             {Array.from({ length: totalSlides }).map((_, index) => (
               <button
@@ -68,14 +82,6 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
               />
             ))}
           </div>
-          
-          <button 
-            className="featured-car-carousel__control featured-car-carousel__control--next"
-            onClick={handleNext}
-            aria-label="Next slide"
-          >
-            <span aria-hidden="true">&rsaquo;</span>
-          </button>
         </div>
       )}
     </div>
