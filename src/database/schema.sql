@@ -7,16 +7,16 @@ CREATE TABLE IF NOT EXISTS cars (
     id INT PRIMARY KEY AUTO_INCREMENT,
     make VARCHAR(50) NOT NULL,
     model VARCHAR(50) NOT NULL,
-    year INT NOT NULL,
-    color VARCHAR(30) NOT NULL,
-    doors INT NOT NULL,
-    engine_displacement VARCHAR(20) NOT NULL,
-    horsepower INT NOT NULL,
+    modelYear INT NOT NULL,
+    color VARCHAR(30),
+    doors INT,
+    engine_displacement VARCHAR(20),
+    horsepower INT,
     mileage INT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    summary VARCHAR(300) NOT NULL,
-    description TEXT,
-    image_url VARCHAR(255) NOT NULL,
+    price INT NOT NULL,
+    title VARCHAR(300) NOT NULL,
+    bodyText TEXT NOT NULL,
+    imageName VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS cars (
 -- Create Carousel table
 CREATE TABLE IF NOT EXISTS carousel_images (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    image_url VARCHAR(255) NOT NULL,
+    imageName VARCHAR(255) NOT NULL,
     title VARCHAR(100),
     subtitle VARCHAR(200),
     delay INT DEFAULT 7000,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS carousel_images (
 CREATE INDEX idx_cars_make ON cars(make);
 CREATE INDEX idx_cars_model ON cars(model);
 CREATE INDEX idx_cars_price ON cars(price);
-CREATE INDEX idx_cars_mileage ON cars(mileage);
+CREATE INDEX idx_cars_odometer ON cars(odometer);
 CREATE INDEX idx_carousel_order ON carousel_images(display_order);
 
 -- Create the user and grant privileges

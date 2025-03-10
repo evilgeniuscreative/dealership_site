@@ -6,7 +6,7 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
-    role ENUM('admin', 'manager') NOT NULL DEFAULT 'admin',
+    role ENUM('admin', 'manager','sales','customer', 'customer_service') NOT NULL DEFAULT 'customer',
     is_active BOOLEAN NOT NULL DEFAULT true,
     two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
     two_factor_secret VARCHAR(32),

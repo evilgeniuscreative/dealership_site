@@ -12,7 +12,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'dealership_db'
+  database: process.env.DB_NAME || 'dealership_db2'
 };
 
 // Function to import CSV data into the database
@@ -46,6 +46,9 @@ async function importCarsFromCSV() {
             let model = '';
             let year = 0;
             let color = 'Unknown';
+            let car_condition = 'Unknown';
+            let car_transmission = 'Unknown';
+            let car_type = 'Unknown';
             
             if (car.Title) {
               const titleParts = car.Title.split(' ');
@@ -81,7 +84,7 @@ async function importCarsFromCSV() {
               price = parseFloat(priceStr) || 0;
             }
             
-            // Extract mileage from summary if available
+            // Extract mileage and other attributes from summary if available
             let mileage = 0;
             if (car.Summary) {
               const mileageMatch = car.Summary.match(/odometer:\s*([\d,]+)/i);
@@ -94,15 +97,34 @@ async function importCarsFromCSV() {
               if (colorMatch && colorMatch[1]) {
                 color = colorMatch[1];
               }
+              
+              // Try to extract condition
+              const conditionMatch = car.Summary.match(/condition:\s*([a-zA-Z]+)/i);
+              if (conditionMatch && conditionMatch[1]) {
+                car_condition = conditionMatch[1];
+              }
+              
+              // Try to extract transmission
+              const transmissionMatch = car.Summary.match(/transmission:\s*([a-zA-Z]+)/i);
+              if (transmissionMatch && transmissionMatch[1]) {
+                car_transmission = transmissionMatch[1];
+              }
+              
+              // Try to extract type
+              const typeMatch = car.Summary.match(/type:\s*([a-zA-Z]+)/i);
+              if (typeMatch && typeMatch[1]) {
+                car_type = typeMatch[1];
+              }
             }
             
-            // Prepare query
+            // Prepare query with updated column names
             const query = `
               INSERT INTO cars (
-                make, model, year, color, doors, 
-                engineDisplacement, horsepower, mileage, 
-                price, summary, description, imageUrl
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                make, model, modelYear, color, doors, 
+                engine_size, horsepower, mileage, 
+                price, title, bodyText, imageName,
+                car_condition, car_status, car_transmission, car_type
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             
             // Execute query
@@ -112,13 +134,17 @@ async function importCarsFromCSV() {
               year || 0,
               color,
               4, // Default doors
-              'Unknown', // Default engineDisplacement
+              'Unknown', // Default engine_size
               0, // Default horsepower
               mileage,
               price,
-              car.Summary || '',
+              car.Title || '',
               car.Description || '',
-              car.ImageURL || ''
+              car.ImageURL || '',
+              car_condition,
+              'Available', // Default car_status
+              car_transmission,
+              car_type
             ]);
             
             console.log(`Row ${i + 1}: Imported successfully. ID: ${result.insertId}`);

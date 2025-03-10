@@ -4,30 +4,34 @@ export interface Car {
   id?: number;
   make: string;
   model: string;
-  year: number;
+  modelYear: number;
   color: string;
   doors: number;
-  engineDisplacement: string;
+  engine_size: string;
   horsepower: number;
   mileage: number;
   price: number;
-  summary: string;
-  description: string;
-  imageUrl: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  title: string;
+  bodyText: string;
+  imageName: string;
+  car_condition?: string;
+  car_status?: string;
+  car_transmission?: string;
+  car_type?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface CarouselImage {
   id?: number;
-  imageUrl: string;
+  imageName: string;
   title: string;
   subtitle: string;
   delay?: number;
-  displayOrder?: number;
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface PageHero {
