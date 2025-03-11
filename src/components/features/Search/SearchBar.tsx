@@ -10,9 +10,14 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onAdvancedSearchClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  console.log('SearchBar rendering with props:', { onSearch, onAdvancedSearchClick });
+  console.log('FontAwesomeIcon:', FontAwesomeIcon);
+  console.log('faSearch icon:', faSearch);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Search submitted with query:', searchQuery);
     onSearch(searchQuery);
   };
 
@@ -27,7 +32,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onAdvancedSearchClick }
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <button type="submit" className="search-bar__button">
-          <FontAwesomeIcon icon={faSearch} />
+          {/* Temporarily replace FontAwesomeIcon with text to see if this is causing the issue */}
+          Search
         </button>
       </form>
       <button 

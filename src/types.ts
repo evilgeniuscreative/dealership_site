@@ -4,7 +4,7 @@ export interface Car {
   id?: number;
   make: string;
   model: string;
-  modelYear: number;
+  model_year: number;
   color: string;
   doors: number;
   engine_size: string;
@@ -12,8 +12,9 @@ export interface Car {
   mileage: number;
   price: number;
   title: string;
-  bodyText: string;
-  imageName: string;
+  body_text: string;
+  image_name: string;
+  featured_car?: boolean;
   car_condition?: string;
   car_status?: string;
   car_transmission?: string;
@@ -24,7 +25,7 @@ export interface Car {
 
 export interface CarouselImage {
   id?: number;
-  imageName: string;
+  image_name: string;
   title: string;
   subtitle: string;
   delay?: number;
@@ -37,7 +38,7 @@ export interface CarouselImage {
 export interface PageHero {
   title: string;
   subtitle: string;
-  imageUrl: string;
+  image_url: string;
   height: number;
 }
 
@@ -149,6 +150,7 @@ export interface SearchFilters {
   minPrice?: number;
   maxPrice?: number;
   maxMileage?: number;
+  featured_car?: string;
   query?: string;
   page?: string;
   limit?: string;

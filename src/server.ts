@@ -38,7 +38,7 @@ declare global {
 }
 
 const app = express();
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3001;
 
 // Middleware setup
 const corsOptions: cors.CorsOptions = {
@@ -196,10 +196,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // API Routes setup
-app.use('/m/auth', authRouter);
-app.use('/m/cars', carsRouter);
-app.use('/m/carousel-images', carouselRouter);
-app.use('/m/upload', uploadRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/cars', carsRouter);
+app.use('/api/carousel-images', carouselRouter);
+app.use('/api/upload', uploadRouter);
 
 // HTML Routes
 app.get('/admin', (req, res) => {

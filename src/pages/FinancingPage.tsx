@@ -8,7 +8,7 @@ const FinancingPage: React.FC = () => {
       <Hero
         title="Financing Options"
         subtitle="Find the right payment plan for you"
-        imageUrl="/images/financing-hero.jpg"
+        image_url="/images/financing-hero.jpg"
         height={350}
       />
 

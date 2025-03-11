@@ -32,11 +32,11 @@ router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { c
     let query, params;
     
     if (image.car_id) {
-      query = 'INSERT INTO carousel_images (car_id, title, subtitle, image_url, display_order, carousel_type) VALUES (?, ?, ?, ?, ?, ?)';
-      params = [image.car_id, image.title, image.subtitle, image.imageUrl, image.displayOrder || 0, image.carousel_type || 'main'];
+      query = 'INSERT INTO carousel_images (car_id, title, subtitle, image_name, display_order, carousel_type) VALUES (?, ?, ?, ?, ?, ?)';
+      params = [image.car_id, image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main'];
     } else {
-      query = 'INSERT INTO carousel_images (title, subtitle, image_url, display_order, carousel_type) VALUES (?, ?, ?, ?, ?)';
-      params = [image.title, image.subtitle, image.imageUrl, image.displayOrder || 0, image.carousel_type || 'main'];
+      query = 'INSERT INTO carousel_images (title, subtitle, image_name, display_order, carousel_type) VALUES (?, ?, ?, ?, ?)';
+      params = [image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main'];
     }
 
     const [result] = await pool.execute<ResultSetHeader>(query, params);
@@ -62,11 +62,11 @@ router.put('/:id', authMiddleware, async (req: Request<{ id: string }, {}, Carou
     let query, params;
     
     if (image.car_id) {
-      query = 'UPDATE carousel_images SET car_id = ?, title = ?, subtitle = ?, image_url = ?, display_order = ?, carousel_type = ? WHERE id = ?';
-      params = [image.car_id, image.title, image.subtitle, image.imageUrl, image.displayOrder || 0, image.carousel_type || 'main', req.params.id];
+      query = 'UPDATE carousel_images SET car_id = ?, title = ?, subtitle = ?, image_name = ?, display_order = ?, carousel_type = ? WHERE id = ?';
+      params = [image.car_id, image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main', req.params.id];
     } else {
-      query = 'UPDATE carousel_images SET car_id = NULL, title = ?, subtitle = ?, image_url = ?, display_order = ?, carousel_type = ? WHERE id = ?';
-      params = [image.title, image.subtitle, image.imageUrl, image.displayOrder || 0, image.carousel_type || 'main', req.params.id];
+      query = 'UPDATE carousel_images SET car_id = NULL, title = ?, subtitle = ?, image_name = ?, display_order = ?, carousel_type = ? WHERE id = ?';
+      params = [image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main', req.params.id];
     }
 
     const [result] = await pool.execute<ResultSetHeader>(query, params);

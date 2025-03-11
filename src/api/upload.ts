@@ -37,32 +37,57 @@ async function processCarsCSV(filePath: string): Promise<{ success: number; fail
       .pipe(csv.parse({ columns: true, trim: true }))
       .on('data', (data: any) => {
         // Convert numeric fields
-        data.year = parseInt(data.year);
+        // Handle legacy field names from CSV
+        data.model_year = parseInt(data.year || data.model_year);
         data.doors = parseInt(data.doors);
         data.horsepower = parseInt(data.horsepower);
         data.mileage = parseInt(data.mileage);
         data.price = parseInt(data.price);
-        results.push(data as Car);
+        
+        // Map legacy field names to new snake_case names
+        if (data.year && !data.model_year) data.model_year = data.year;
+        if (data.engineDisplacement && !data.engine_size) data.engine_size = data.engineDisplacement;
+        if (data.summary && !data.body_text) data.body_text = data.summary;
+        if (data.description && data.body_text) data.body_text += "\n\n" + data.description;
+        if (data.imageUrl && !data.image_name) data.image_name = data.imageUrl;
+        
+        // Create a new object that only includes properties that exist in the Car interface
+        const car: Car = {
+          make: data.make,
+          model: data.model,
+          model_year: data.model_year,
+          color: data.color,
+          doors: data.doors,
+          engine_size: data.engine_size,
+          horsepower: data.horsepower,
+          mileage: data.mileage,
+          price: data.price,
+          title: data.title || `${data.make} ${data.model} ${data.model_year}`,
+          body_text: data.body_text,
+          image_name: data.image_name
+        };
+        
+        results.push(car);
       })
       .on('end', async () => {
         // Process each car
         for (const car of results) {
           try {
             await pool.execute(
-              'INSERT INTO cars (make, model, year, color, doors, engine_displacement, horsepower, mileage, price, summary, description, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              'INSERT INTO cars (make, model, model_year, color, doors, engine_size, horsepower, mileage, price, title, body_text, image_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
               [
                 car.make,
                 car.model,
-                car.year,
+                car.model_year,
                 car.color,
                 car.doors,
-                car.engineDisplacement,
+                car.engine_size,
                 car.horsepower,
                 car.mileage,
                 car.price,
-                car.summary,
-                car.description,
-                car.imageUrl
+                car.title,
+                car.body_text,
+                car.image_name
               ]
             );
             success++;

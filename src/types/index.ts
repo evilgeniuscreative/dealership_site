@@ -2,16 +2,21 @@ export interface Car {
   id: number;
   make: string;
   model: string;
-  year: number;
+  model_year: number;
   color: string;
   doors: number;
-  engineDisplacement: string;
+  engine_size: string;
   horsepower: number;
   mileage: number;
   price: number;
-  summary: string;
-  description: string;
-  imageUrl: string;
+  title: string;
+  body_text: string;
+  image_name: string;
+  car_condition?: string;
+  car_status?: string;
+  car_transmission?: string;
+  car_type?: string;
+  featured_car?: number;
 }
 
 export interface CarouselImage {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Navigation from './components/layout/Navigation';
@@ -13,7 +13,21 @@ import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import './styles/App.scss';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Main App component
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
+  );
+};
+
+// ProtectedRoute component that checks authentication
+const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -25,42 +39,34 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 };
 
-const App: React.FC = () => {
+// AppContent component that contains all routes
+const AppContent: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <Router>
-          <div className="app">
-            <Navigation />
-            <main className="app__content">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/financing" element={<FinancingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route
-                  path="/admin/*"
-                  element={
-                    <ProtectedRoute>
-                      <AdminPage />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </main>
-          </div>
-        </Router>
-      </AuthProvider>
-    </ErrorBoundary>
+    <div className="app">
+      <Navigation />
+      <main className="app__content">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/financing" element={<FinancingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          
+          {/* Protected routes using the element + children pattern */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin/*" element={<AdminPage />} />
+          </Route>
+        </Routes>
+      </main>
+    </div>
   );
 };
 

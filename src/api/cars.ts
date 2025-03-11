@@ -32,6 +32,11 @@ router.get('/', ((req: Request<{}, {}, {}, SearchFilters>, res: Response, next) 
         params.push(req.query.model);
       }
 
+      if (req.query.featured_car) {
+        query += ' AND featured_car = ?';
+        params.push(req.query.featured_car === 'true' ? 1 : 0);
+      }
+
       if (req.query.minPrice) {
         query += ' AND price >= ?';
         params.push(req.query.minPrice);
@@ -107,15 +112,15 @@ router.post('/', authMiddleware, ((req: Request<{}, {}, Car>, res: Response, nex
       const car: Car = req.body;
       const [result] = await pool.execute<ResultSetHeader>(
         `INSERT INTO cars (
-          make, model, modelYear, color, doors,
+          make, model, model_year, color, doors,
           engine_size, horsepower, mileage,
-          price, title, bodyText, imageName,
+          price, title, body_text, image_name,
           car_condition, car_status, car_transmission, car_type
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           car.make,
           car.model,
-          car.modelYear,
+          car.model_year,
           car.color,
           car.doors,
           car.engine_size,
@@ -123,8 +128,8 @@ router.post('/', authMiddleware, ((req: Request<{}, {}, Car>, res: Response, nex
           car.mileage,
           car.price,
           car.title,
-          car.bodyText,
-          car.imageName,
+          car.body_text,
+          car.image_name,
           car.car_condition || null,
           car.car_status || null,
           car.car_transmission || null,
@@ -150,15 +155,15 @@ router.put('/:id', authMiddleware, ((req: Request<{ id: string }, {}, Car>, res:
       const car: Car = req.body;
       const [result] = await pool.execute<ResultSetHeader>(
         `UPDATE cars SET
-          make = ?, model = ?, modelYear = ?, color = ?, doors = ?,
+          make = ?, model = ?, model_year = ?, color = ?, doors = ?,
           engine_size = ?, horsepower = ?, mileage = ?,
-          price = ?, title = ?, bodyText = ?, imageName = ?,
+          price = ?, title = ?, body_text = ?, image_name = ?,
           car_condition = ?, car_status = ?, car_transmission = ?, car_type = ?
         WHERE id = ?`,
         [
           car.make,
           car.model,
-          car.modelYear,
+          car.model_year,
           car.color,
           car.doors,
           car.engine_size,
@@ -166,8 +171,8 @@ router.put('/:id', authMiddleware, ((req: Request<{ id: string }, {}, Car>, res:
           car.mileage,
           car.price,
           car.title,
-          car.bodyText,
-          car.imageName,
+          car.body_text,
+          car.image_name,
           car.car_condition || null,
           car.car_status || null,
           car.car_transmission || null,

@@ -8,7 +8,7 @@ const AboutPage: React.FC = () => {
       <Hero
         title="About Us"
         subtitle="Your Trusted Car Dealership"
-        imageUrl="/images/about-hero.jpg"
+        image_url="/images/about-hero.jpg"
         height={350}
       />
 

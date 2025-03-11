@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchFilters } from '../../../types';
 import '../../../styles/components/AdvancedSearch.scss';
 
@@ -13,6 +13,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   onClose,
   isOpen
 }) => {
+  console.log('AdvancedSearch rendering with props:', { isOpen });
+  
   const [filters, setFilters] = useState<SearchFilters>({
     make: '',
     model: '',
@@ -21,20 +23,34 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     maxMileage: undefined
   });
 
+  // Debug the filters state
+  useEffect(() => {
+    console.log('AdvancedSearch filters state:', filters);
+  }, [filters]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('AdvancedSearch submitting filters:', filters);
     onSearch(filters);
     onClose();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value === '' ? undefined : 
+    console.log('AdvancedSearch handleChange:', { name, value });
+    
+    setFilters(prev => {
+      const newValue = value === '' ? undefined : 
         ['minPrice', 'maxPrice', 'maxMileage'].includes(name) ? 
-        Number(value) : value
-    }));
+        Number(value) : value;
+      
+      console.log('Setting new value for', name, ':', newValue);
+      
+      return {
+        ...prev,
+        [name]: newValue
+      };
+    });
   };
 
   if (!isOpen) return null;

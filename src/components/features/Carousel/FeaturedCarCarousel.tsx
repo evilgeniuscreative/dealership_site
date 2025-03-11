@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Car } from '../../../types';
 import CarCard from '../Cars/CarCard';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import '../../../styles/components/FeaturedCarCarousel.scss';
 
 interface FeaturedCarCarouselProps {
@@ -13,13 +14,23 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
   cars, 
   itemsPerSlide = 3
 }) => {
+  console.log('FeaturedCarCarousel rendering with cars:', cars);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Calculate the total number of slides needed
   const totalSlides = Math.ceil(cars.length / itemsPerSlide);
   
+  // Log when cars change
+  useEffect(() => {
+    console.log('FeaturedCarCarousel cars changed:', cars);
+  }, [cars]);
+  
   // If no cars or only one slide, don't show navigation
-  if (cars.length === 0) return null;
+  if (cars.length === 0) {
+    console.log('FeaturedCarCarousel: No cars to display');
+    return null;
+  }
   
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
@@ -32,7 +43,9 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
   // Get current slide's cars
   const getCurrentCars = () => {
     const startIndex = currentIndex * itemsPerSlide;
-    return cars.slice(startIndex, startIndex + itemsPerSlide);
+    const currentCars = cars.slice(startIndex, startIndex + itemsPerSlide);
+    console.log('FeaturedCarCarousel getCurrentCars:', currentCars);
+    return currentCars;
   };
 
   return (
@@ -45,7 +58,7 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
             onClick={handlePrev}
             aria-label="Previous slide"
           >
-            <FaChevronLeft />
+            <FontAwesomeIcon icon={faChevronLeft} />
           </button>
           
           <button 
@@ -53,18 +66,21 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
             onClick={handleNext}
             aria-label="Next slide"
           >
-            <FaChevronRight />
+            <FontAwesomeIcon icon={faChevronRight} />
           </button>
         </>
       )}
 
       <div className="featured-car-carousel__container">
         <div className="featured-car-carousel__slide">
-          {getCurrentCars().map((car) => (
-            <div key={car.id} className="featured-car-carousel__item">
-              <CarCard car={car} />
-            </div>
-          ))}
+          {getCurrentCars().map((car) => {
+            console.log('Rendering car in FeaturedCarCarousel:', car.id);
+            return (
+              <div key={car.id} className="featured-car-carousel__item">
+                <CarCard car={car} />
+              </div>
+            );
+          })}
         </div>
       </div>
       

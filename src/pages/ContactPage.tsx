@@ -11,7 +11,7 @@ const ContactPage: React.FC = () => {
       <Hero
         title="Contact Us"
         subtitle="We're here to help"
-        imageUrl="/images/contact-hero.jpg"
+        image_url="/images/contact-hero.jpg"
         height={350}
       />
 

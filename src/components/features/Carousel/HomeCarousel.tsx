@@ -4,60 +4,123 @@ import '../../../styles/components/HomeCarousel.scss';
 
 interface HomeCarouselProps {
   images: CarouselImage[];
-  defaultDelay?: number;
+  default_delay?: number;
 }
 
 const HomeCarousel: React.FC<HomeCarouselProps> = ({ 
   images, 
-  defaultDelay = 7000 
+  default_delay = 7000 
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  console.log('HomeCarousel rendering with images:', images);
+  console.log('HomeCarousel props:', { images, default_delay });
+  
+  const [current_index, setCurrentIndex] = useState(0);
+  const [is_transitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
+    console.log('HomeCarousel useEffect running, images length:', images.length);
+    console.log('HomeCarousel useEffect current_index:', current_index);
     if (images.length <= 1) return;
 
-    const delay = images[currentIndex].delay || defaultDelay;
+    const delay = images[current_index]?.delay || default_delay;
+    console.log('Setting timeout with delay:', delay);
+    
     const timer = setTimeout(() => {
+      console.log('Timeout triggered, setting is_transitioning to true');
       setIsTransitioning(true);
+      console.log('Updating current_index:', current_index);
       setCurrentIndex((prev) => (prev + 1) % images.length);
     }, delay);
 
-    return () => clearTimeout(timer);
-  }, [currentIndex, images, defaultDelay]);
+    return () => {
+      console.log('Clearing timeout');
+      clearTimeout(timer);
+    };
+  }, [current_index, images, default_delay]);
 
-  const handleDotClick = (index: number) => {
+  const handle_dot_click = (index: number) => {
+    console.log('Dot clicked for index:', index);
+    console.log('Setting is_transitioning to true');
     setIsTransitioning(true);
+    console.log('Updating current_index:', index);
     setCurrentIndex(index);
   };
 
-  const handleTransitionEnd = () => {
+  const handle_transition_end = () => {
+    console.log('Transition ended');
+    console.log('Setting is_transitioning to false');
     setIsTransitioning(false);
   };
 
-  if (!images.length) return null;
+  // Get image URL with REACT_APP_BASE_URL if it's a relative path
+  const getImageUrl = (imagePath: string) => {
+    console.log('Getting image URL for path:', imagePath);
+    
+    if (!imagePath) {
+      // Use a fallback image if no image path is provided
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      console.log('No image path provided, using fallback with baseUrl:', baseUrl);
+      return `${baseUrl}/img/placeholder.jpg`;
+    }
+    
+    if (!imagePath.startsWith('http')) {
+      // If it's a relative path, prepend REACT_APP_BASE_URL
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      console.log('Using baseUrl:', baseUrl);
+      
+      // Get just the file extension from the image path
+      const fileExtension = imagePath.split('.').pop() || 'jpg';
+      console.log('File extension:', fileExtension);
+      
+      // If the imagePath is a number, use that number to find a matching image
+      if (/^\d+$/.test(imagePath)) {
+        // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+        if (baseUrl.endsWith('/')) {
+          return `${baseUrl}img/car_images/${imagePath}.${fileExtension}`;
+        }
+        return `${baseUrl}/img/car_images/${imagePath}.${fileExtension}`;
+      }
+      
+      // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+      if (baseUrl.endsWith('/')) {
+        return `${baseUrl}img/car_images/${imagePath}`;
+      }
+      return `${baseUrl}/img/car_images/${imagePath}`;
+    }
+    return imagePath;
+  };
 
+  if (!images.length) {
+    console.log('HomeCarousel: No images to display');
+    return null;
+  }
+
+  console.log('HomeCarousel rendering with current_index:', current_index);
+  
   return (
     <div className="home-carousel">
-      {images.map((image, index) => (
-        <div
-          key={image.id}
-          className={`home-carousel__slide ${
-            index === currentIndex ? 'home-carousel__slide--active' : ''
-          } ${isTransitioning ? 'home-carousel__slide--transitioning' : ''}`}
-          style={{ backgroundImage: `url(${image.imageUrl})` }}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          <div className="home-carousel__content">
-            {image.title && (
-              <h2 className="home-carousel__title">{image.title}</h2>
-            )}
-            {image.subtitle && (
-              <p className="home-carousel__subtitle">{image.subtitle}</p>
-            )}
+      {images.map((image, index) => {
+        console.log('Rendering carousel image:', image.id || index);
+        return (
+          <div
+            key={image.id || index}
+            className={`home-carousel__slide ${
+              index === current_index ? 'home-carousel__slide--active' : ''
+            } ${is_transitioning ? 'home-carousel__slide--transitioning' : ''}`}
+            style={{ backgroundImage: `url(${getImageUrl(image.image_name)})` }}
+            onTransitionEnd={handle_transition_end}
+          >
+            <div className="home-carousel__content">
+              {image.title && (
+                <h2 className="home-carousel__title">{image.title}</h2>
+              )}
+              {image.subtitle && (
+                <p className="home-carousel__subtitle">{image.subtitle}</p>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       
       {images.length > 1 && (
         <div className="home-carousel__dots">
@@ -65,9 +128,9 @@ const HomeCarousel: React.FC<HomeCarouselProps> = ({
             <button
               key={index}
               className={`home-carousel__dot ${
-                index === currentIndex ? 'home-carousel__dot--active' : ''
+                index === current_index ? 'home-carousel__dot--active' : ''
               }`}
-              onClick={() => handleDotClick(index)}
+              onClick={() => handle_dot_click(index)}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

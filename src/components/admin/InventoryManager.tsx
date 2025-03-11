@@ -8,16 +8,15 @@ const InventoryManager: React.FC = () => {
   const [newCar, setNewCar] = useState<Partial<Car>>({
     make: '',
     model: '',
-    year: new Date().getFullYear(),
+    model_year: new Date().getFullYear(),
     color: '',
     doors: 4,
-    engineDisplacement: '',
+    engine_size: '',
     horsepower: 0,
     mileage: 0,
     price: 0,
-    summary: '',
-    description: '',
-    imageUrl: ''
+    body_text: '',
+    image_name: ''
   });
 
   useEffect(() => {
@@ -47,7 +46,7 @@ const InventoryManager: React.FC = () => {
         body: formData,
       });
       const data = await response.json();
-      setNewCar(prev => ({ ...prev, imageUrl: data.url }));
+      setNewCar(prev => ({ ...prev, image_name: data.url }));
     } catch (error) {
       console.error('Error uploading image:', error);
     }
@@ -106,16 +105,15 @@ const InventoryManager: React.FC = () => {
     setNewCar({
       make: '',
       model: '',
-      year: new Date().getFullYear(),
+      model_year: new Date().getFullYear(),
       color: '',
       doors: 4,
-      engineDisplacement: '',
+      engine_size: '',
       horsepower: 0,
       mileage: 0,
       price: 0,
-      summary: '',
-      description: '',
-      imageUrl: ''
+      body_text: '',
+      image_name: ''
     });
   };
 
@@ -125,10 +123,43 @@ const InventoryManager: React.FC = () => {
     const { name, value } = e.target;
     setNewCar(prev => ({
       ...prev,
-      [name]: ['year', 'doors', 'horsepower', 'mileage', 'price'].includes(name)
+      [name]: ['model_year', 'doors', 'horsepower', 'mileage', 'price'].includes(name)
         ? Number(value)
         : value
     }));
+  };
+
+  // Get image URL with REACT_APP_BASE_URL if it's a relative path
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) {
+      // Use a fallback image if no image path is provided
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      return `${baseUrl}/img/placeholder.jpg`;
+    }
+    
+    if (!imagePath.startsWith('http')) {
+      // If it's a relative path, prepend REACT_APP_BASE_URL
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      
+      // Get just the file extension from the image path
+      const fileExtension = imagePath.split('.').pop() || 'jpg';
+      
+      // If the imagePath is a number, use that number to find a matching image
+      if (/^\d+$/.test(imagePath)) {
+        // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+        if (baseUrl.endsWith('/')) {
+          return `${baseUrl}img/car_images/${imagePath}.${fileExtension}`;
+        }
+        return `${baseUrl}/img/car_images/${imagePath}.${fileExtension}`;
+      }
+      
+      // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+      if (baseUrl.endsWith('/')) {
+        return `${baseUrl}img/car_images/${imagePath}`;
+      }
+      return `${baseUrl}/img/car_images/${imagePath}`;
+    }
+    return imagePath;
   };
 
   return (
@@ -162,12 +193,12 @@ const InventoryManager: React.FC = () => {
           </div>
 
           <div className="inventory-manager__field">
-            <label htmlFor="year">Year</label>
+            <label htmlFor="model_year">Year</label>
             <input
               type="number"
-              id="year"
-              name="year"
-              value={newCar.year}
+              id="model_year"
+              name="model_year"
+              value={newCar.model_year}
               onChange={handleInputChange}
               required
               min="1900"
@@ -202,12 +233,12 @@ const InventoryManager: React.FC = () => {
           </div>
 
           <div className="inventory-manager__field">
-            <label htmlFor="engineDisplacement">Engine Displacement</label>
+            <label htmlFor="engine_size">Engine Size</label>
             <input
               type="text"
-              id="engineDisplacement"
-              name="engineDisplacement"
-              value={newCar.engineDisplacement}
+              id="engine_size"
+              name="engine_size"
+              value={newCar.engine_size}
               onChange={handleInputChange}
               required
               placeholder="e.g., 2.0L"
@@ -255,10 +286,10 @@ const InventoryManager: React.FC = () => {
           </div>
 
           <div className="inventory-manager__field">
-            <label htmlFor="image">Image</label>
+            <label htmlFor="image_name">Image</label>
             <input
               type="file"
-              id="image"
+              id="image_name"
               accept="image/*"
               onChange={handleImageUpload}
               required={!selectedCar}
@@ -267,11 +298,11 @@ const InventoryManager: React.FC = () => {
         </div>
 
         <div className="inventory-manager__field inventory-manager__field--full">
-          <label htmlFor="summary">Summary (300 characters max)</label>
+          <label htmlFor="body_text">Summary (300 characters max)</label>
           <textarea
-            id="summary"
-            name="summary"
-            value={newCar.summary}
+            id="body_text"
+            name="body_text"
+            value={newCar.body_text}
             onChange={handleInputChange}
             required
             maxLength={300}
@@ -280,11 +311,11 @@ const InventoryManager: React.FC = () => {
         </div>
 
         <div className="inventory-manager__field inventory-manager__field--full">
-          <label htmlFor="description">Full Description</label>
+          <label htmlFor="body_text_full">Full Description</label>
           <textarea
-            id="description"
-            name="description"
-            value={newCar.description}
+            id="body_text_full"
+            name="body_text"
+            value={newCar.body_text}
             onChange={handleInputChange}
             required
             rows={6}
@@ -326,14 +357,14 @@ const InventoryManager: React.FC = () => {
                 <tr key={car.id}>
                   <td>
                     <img 
-                      src={car.imageUrl} 
-                      alt={`${car.year} ${car.make} ${car.model}`}
+                      src={getImageUrl(car.image_name)} 
+                      alt={`${car.model_year} ${car.make} ${car.model}`}
                       className="inventory-manager__car-image"
                     />
                   </td>
                   <td>{car.make}</td>
                   <td>{car.model}</td>
-                  <td>{car.year}</td>
+                  <td>{car.model_year}</td>
                   <td>${car.price.toLocaleString()}</td>
                   <td>
                     <button onClick={() => handleEdit(car)}>Edit</button>

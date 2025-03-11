@@ -9,15 +9,17 @@ interface HeroProps extends PageHero {
 const Hero: React.FC<HeroProps> = ({ 
   title, 
   subtitle, 
-  imageUrl, 
+  image_url, 
   height, 
   isHomePage = false 
 }) => {
+  console.log('Hero rendering with props:', { title, subtitle, image_url, height, isHomePage });
+  
   return (
     <div 
       className={`hero ${isHomePage ? 'hero--home' : ''}`}
       style={{ 
-        backgroundImage: `url(${imageUrl})`,
+        backgroundImage: `url(${image_url})`,
         height: `${height}px`
       }}
     >

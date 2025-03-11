@@ -8,6 +8,8 @@ import { Car, CarouselImage, SearchFilters } from '../types';
 import '../styles/pages/HomePage.scss';
 
 const HomePage: React.FC = () => {
+  console.log('HomePage component rendering');
+  
   const [cars, setCars] = useState<Car[]>([]);
   const [featuredCars, setFeaturedCars] = useState<Car[]>([]);
   const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
@@ -16,6 +18,7 @@ const HomePage: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
+    console.log('HomePage useEffect running');
     // Fetch initial cars and carousel images from API
     fetchCars(1);
     fetchFeaturedCars();
@@ -24,17 +27,18 @@ const HomePage: React.FC = () => {
 
   const fetchCars = async (pageNumber: number) => {
     try {
-      // TODO: Replace with actual API call
+      console.log(`Fetching cars for page ${pageNumber}`);
       const response = await fetch(`/api/cars?page=${pageNumber}`);
       const data = await response.json();
+      console.log(`Received ${data.length} cars for page ${pageNumber}`, data);
       
       if (pageNumber === 1) {
-        setCars(data.cars);
+        setCars(data);
       } else {
-        setCars(prev => [...prev, ...data.cars]);
+        setCars(prev => [...prev, ...data]);
       }
       
-      setHasMore(data.hasMore);
+      setHasMore(data.length === 12); // Assuming 12 is the page limit
     } catch (error) {
       console.error('Error fetching cars:', error);
     }
@@ -42,9 +46,11 @@ const HomePage: React.FC = () => {
 
   const fetchFeaturedCars = async () => {
     try {
+      console.log('Fetching featured cars');
       // Fetch cars marked as featured
-      const response = await fetch('/api/cars/featured');
+      const response = await fetch('/api/cars?featured_car=true');
       const data = await response.json();
+      console.log('Received featured cars:', data);
       setFeaturedCars(data);
     } catch (error) {
       console.error('Error fetching featured cars:', error);
@@ -53,9 +59,11 @@ const HomePage: React.FC = () => {
 
   const fetchCarouselImages = async () => {
     try {
+      console.log('Fetching carousel images');
       // Fetch carousel images with type 'main'
       const response = await fetch('/api/carousel-images?type=main');
       const data = await response.json();
+      console.log('Received carousel images:', data);
       setCarouselImages(data);
     } catch (error) {
       console.error('Error fetching carousel images:', error);
@@ -74,10 +82,23 @@ const HomePage: React.FC = () => {
 
   const loadMoreCars = () => {
     const nextPage = page + 1;
+    console.log(`Loading more cars, page ${nextPage}`);
     setPage(nextPage);
     fetchCars(nextPage);
   };
 
+  console.log('HomePage render - Current state:', { 
+    carsCount: cars.length, 
+    featuredCarsCount: featuredCars.length,
+    carouselImagesCount: carouselImages.length
+  });
+
+  // Debug logs before rendering
+  console.log('Rendering HomeCarousel with images:', carouselImages);
+  console.log('Rendering SearchBar');
+  console.log('Rendering AdvancedSearch, isOpen:', isAdvancedSearchOpen);
+  console.log('Rendering FeaturedCarCarousel with cars:', featuredCars);
+  
   return (
     <div className="home-page">
       <HomeCarousel images={carouselImages} />
@@ -102,9 +123,10 @@ const HomePage: React.FC = () => {
         
         <h2 className="home-page__section-title mt-5">All Inventory</h2>
         <div className="home-page__car-grid">
-          {cars.map(car => (
-            <CarCard key={car.id} car={car} />
-          ))}
+          {cars.map(car => {
+            console.log('Rendering CarCard for car:', car.id);
+            return <CarCard key={car.id} car={car} />;
+          })}
         </div>
         {hasMore && (
           <button 

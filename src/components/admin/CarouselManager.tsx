@@ -7,7 +7,7 @@ const CarouselManager: React.FC = () => {
   const [newImage, setNewImage] = useState<Partial<CarouselImage>>({
     title: '',
     subtitle: '',
-    imageUrl: '',
+    image_name: '',
     delay: 7000, // Default delay
   });
   const [selectedImage, setSelectedImage] = useState<CarouselImage | null>(null);
@@ -39,7 +39,7 @@ const CarouselManager: React.FC = () => {
         body: formData,
       });
       const data = await response.json();
-      setNewImage(prev => ({ ...prev, imageUrl: data.url }));
+      setNewImage(prev => ({ ...prev, image_name: data.url }));
     } catch (error) {
       console.error('Error uploading image:', error);
     }
@@ -71,7 +71,7 @@ const CarouselManager: React.FC = () => {
       setNewImage({
         title: '',
         subtitle: '',
-        imageUrl: '',
+        image_name: '',
         delay: 7000,
       });
       setSelectedImage(null);
@@ -85,7 +85,7 @@ const CarouselManager: React.FC = () => {
     setNewImage({
       title: image.title,
       subtitle: image.subtitle,
-      imageUrl: image.imageUrl,
+      image_name: image.image_name,
       delay: image.delay || 7000, // Ensure delay has a default value when editing
     });
   };
@@ -106,6 +106,39 @@ const CarouselManager: React.FC = () => {
     } catch (error) {
       console.error('Error deleting carousel image:', error);
     }
+  };
+
+  // Get image URL with REACT_APP_BASE_URL if it's a relative path
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) {
+      // Use a fallback image if no image path is provided
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      return `${baseUrl}/img/placeholder.jpg`;
+    }
+    
+    if (!imagePath.startsWith('http')) {
+      // If it's a relative path, prepend REACT_APP_BASE_URL
+      const baseUrl = process.env.REACT_APP_BASE_URL || '';
+      
+      // Get just the file extension from the image path
+      const fileExtension = imagePath.split('.').pop() || 'jpg';
+      
+      // If the imagePath is a number, use that number to find a matching image
+      if (/^\d+$/.test(imagePath)) {
+        // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+        if (baseUrl.endsWith('/')) {
+          return `${baseUrl}img/car_images/${imagePath}.${fileExtension}`;
+        }
+        return `${baseUrl}/img/car_images/${imagePath}.${fileExtension}`;
+      }
+      
+      // Handle case where REACT_APP_BASE_URL is just '/' or ends with '/'
+      if (baseUrl.endsWith('/')) {
+        return `${baseUrl}img/car_images/${imagePath}`;
+      }
+      return `${baseUrl}/img/car_images/${imagePath}`;
+    }
+    return imagePath;
   };
 
   return (
@@ -171,7 +204,7 @@ const CarouselManager: React.FC = () => {
               setNewImage({
                 title: '',
                 subtitle: '',
-                imageUrl: '',
+                image_name: '',
                 delay: 7000,
               });
             }}
@@ -184,7 +217,7 @@ const CarouselManager: React.FC = () => {
       <div className="carousel-manager__images">
         {images.map((image) => (
           <div key={image.id} className="carousel-manager__image-item">
-            <img src={image.imageUrl} alt={image.title} />
+            <img src={getImageUrl(image.image_name)} alt={image.title} />
             <div className="carousel-manager__image-info">
               <h3>{image.title}</h3>
               <p>{image.subtitle}</p>
