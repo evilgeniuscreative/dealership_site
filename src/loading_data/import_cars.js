@@ -15,6 +15,26 @@ const dbConfig = {
   database: process.env.DB_NAME || 'dealership_db2'
 };
 
+// Function to empty the cars table
+async function emptyCarTable() {
+  try {
+    // Create database connection
+    const connection = await mysql.createConnection(dbConfig);
+    console.log('Connected to the database successfully for emptying the cars table');
+
+    // Execute TRUNCATE TABLE query
+    await connection.execute('TRUNCATE TABLE cars');
+    console.log('Cars table emptied successfully');
+    
+    // Close the connection
+    await connection.end();
+    return true;
+  } catch (error) {
+    console.error('Error emptying cars table:', error.message);
+    return false;
+  }
+}
+
 // Function to import CSV data into the database
 async function importCarsFromCSV() {
   try {
@@ -23,7 +43,8 @@ async function importCarsFromCSV() {
     console.log('Connected to the database successfully');
 
     // Read CSV file
-    const csvFilePath = path.join(__dirname, 'transformed_car_listings.csv');
+    const csvFilePath = path.join(__dirname, 'car_listings_formatted.csv');
+    console.log('IMPORT CSV file path:',csvFilePath)
     const results = [];
     
     // Parse CSV file
@@ -41,110 +62,71 @@ async function importCarsFromCSV() {
           const car = results[i];
           
           try {
-            // Extract make, model, year from title if available
-            let make = '';
-            let model = '';
-            let year = 0;
-            let color = 'Unknown';
-            let car_condition = 'Unknown';
-            let car_transmission = 'Unknown';
-            let car_type = 'Unknown';
-            
-            if (car.Title) {
-              const titleParts = car.Title.split(' ');
-              if (titleParts.length >= 2) {
-                // Try to extract year (usually the first 4-digit number in the title)
-                const yearMatch = car.Title.match(/\b(19|20)\d{2}\b/);
-                if (yearMatch) {
-                  year = parseInt(yearMatch[0], 10);
-                  
-                  // Assuming make is usually right after the year
-                  const yearIndex = titleParts.findIndex(part => part.includes(yearMatch[0]));
-                  if (yearIndex !== -1 && yearIndex + 1 < titleParts.length) {
-                    make = titleParts[yearIndex + 1];
-                    
-                    // Model could be the rest of the words after make
-                    if (yearIndex + 2 < titleParts.length) {
-                      model = titleParts.slice(yearIndex + 2).join(' ');
-                    }
-                  }
-                } else {
-                  // If no year found, assume first word is make and rest is model
-                  make = titleParts[0];
-                  model = titleParts.slice(1).join(' ');
-                }
-              }
-            }
+            // Extract values directly from CSV columns
+            const make = car.make || '';
+            const model = car.model || '';
+            const year = parseInt(car.model_year, 10) || 0;
+            const color = car.color || 'Unknown';
+            const car_condition = car.car_condition || 'Unknown';
+            const car_transmission = car.car_transmission || 'Unknown';
+            const car_type = car.car_type || 'Unknown';
+            const car_status = car.car_status || 'Available';
+            const doors = parseInt(car.doors, 10) || 4; // Default to 4 if not provided
+            const engine_size = car.engine_size || `${car.cylinders || ''}${car.fuel ? '-' + car.fuel : ''}`;
+            const horsepower = parseInt(car.horsepower, 10) || 0;
             
             // Extract price
             let price = 0;
-            if (car.Price) {
+            if (car.price) {
               // Remove non-numeric characters except decimal point
-              const priceStr = car.Price.replace(/[^0-9.]/g, '');
+              const priceStr = car.price.toString().replace(/[^0-9.]/g, '');
               price = parseFloat(priceStr) || 0;
             }
             
-            // Extract mileage and other attributes from summary if available
+            // Extract mileage
             let mileage = 0;
-            if (car.Summary) {
-              const mileageMatch = car.Summary.match(/odometer:\s*([\d,]+)/i);
-              if (mileageMatch && mileageMatch[1]) {
-                mileage = parseInt(mileageMatch[1].replace(/,/g, ''), 10) || 0;
-              }
-              
-              // Try to extract color
-              const colorMatch = car.Summary.match(/paint color:\s*([a-zA-Z]+)/i);
-              if (colorMatch && colorMatch[1]) {
-                color = colorMatch[1];
-              }
-              
-              // Try to extract condition
-              const conditionMatch = car.Summary.match(/condition:\s*([a-zA-Z]+)/i);
-              if (conditionMatch && conditionMatch[1]) {
-                car_condition = conditionMatch[1];
-              }
-              
-              // Try to extract transmission
-              const transmissionMatch = car.Summary.match(/transmission:\s*([a-zA-Z]+)/i);
-              if (transmissionMatch && transmissionMatch[1]) {
-                car_transmission = transmissionMatch[1];
-              }
-              
-              // Try to extract type
-              const typeMatch = car.Summary.match(/type:\s*([a-zA-Z]+)/i);
-              if (typeMatch && typeMatch[1]) {
-                car_type = typeMatch[1];
-              }
+            if (car.odometer) {
+              const mileageStr = car.odometer.toString().replace(/[^0-9.]/g, '');
+              mileage = parseInt(mileageStr, 10) || 0;
             }
+            
+            // Determine if car is featured or on sale
+            const featured_car = car.featured_car === '1' ? 1 : 0;
+            const on_sale = car.on_sale === '1' ? 1 : 0;
+            const pct_off = parseInt(car.pct_off, 10) || 0;
             
             // Prepare query with updated column names
             const query = `
               INSERT INTO cars (
-                make, model, modelYear, color, doors, 
+                make, model, model_year, color, doors, 
                 engine_size, horsepower, mileage, 
-                price, title, bodyText, imageName,
-                car_condition, car_status, car_transmission, car_type
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                price, title, body_text, image_name,
+                car_condition, car_status, car_transmission, car_type,
+                featured_car, on_sale, pct_off
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             
             // Execute query
             const [result] = await connection.execute(query, [
-              make || 'Unknown',
-              model || 'Unknown',
-              year || 0,
+              make,
+              model,
+              year,
               color,
-              4, // Default doors
-              'Unknown', // Default engine_size
-              0, // Default horsepower
+              doors,
+              engine_size,
+              horsepower,
               mileage,
               price,
-              car.Title || '',
-              car.Description || '',
-              car.ImageURL || '',
+              car.title || '',
+              car.bodyText || car.body_text || '',
+              car.image_name || '',
               car_condition,
-              'Available', // Default car_status
+              car_status,
               car_transmission,
-              car_type
+              car_type,
+              featured_car,
+              on_sale,
+              pct_off
             ]);
             
             console.log(`Row ${i + 1}: Imported successfully. ID: ${result.insertId}`);
@@ -168,4 +150,9 @@ async function importCarsFromCSV() {
 }
 
 // Run the import function
-importCarsFromCSV();
+async function main() {
+  await emptyCarTable();
+  importCarsFromCSV();
+}
+
+main();
