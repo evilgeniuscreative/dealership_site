@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Car } from '../../../types';
 import CarCard from '../Cars/CarCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import '../../../styles/components/FeaturedCarCarousel.scss';
 
 interface FeaturedCarCarouselProps {
@@ -12,25 +10,53 @@ interface FeaturedCarCarouselProps {
 
 const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({ 
   cars, 
-  itemsPerSlide = 3
+  itemsPerSlide: defaultItemsPerSlide = 3
 }) => {
   console.log('FeaturedCarCarousel rendering with cars:', cars);
+  console.log('FeaturedCarCarousel cars length:', cars.length);
   
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [itemsPerSlide, setItemsPerSlide] = useState(defaultItemsPerSlide);
+
+  // Update items per slide based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width >= 1200) { // xl breakpoint
+        setItemsPerSlide(6); // 6 cards per row for extra large screens
+      } else if (width >= 992) { // lg breakpoint
+        setItemsPerSlide(4); // 4 cards per row for large screens
+      } else if (width >= 768) { // md breakpoint
+        setItemsPerSlide(3); // 3 cards per row for medium screens
+      } else if (width >= 576) { // sm breakpoint
+        setItemsPerSlide(2); // 2 cards per row for small screens
+      } else {
+        setItemsPerSlide(1); // 1 card per row for extra small screens
+      }
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+
 
   // Calculate the total number of slides needed
   const totalSlides = Math.ceil(cars.length / itemsPerSlide);
+  console.log('FeaturedCarCarousel totalSlides:', totalSlides);
   
   // Log when cars change
   useEffect(() => {
     console.log('FeaturedCarCarousel cars changed:', cars);
   }, [cars]);
-  
-  // If no cars or only one slide, don't show navigation
-  if (cars.length === 0) {
-    console.log('FeaturedCarCarousel: No cars to display');
-    return null;
-  }
   
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
@@ -50,6 +76,7 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
 
   return (
     <div className="featured-car-carousel">
+      
       {/* Large side navigation arrows */}
       {totalSlides > 1 && (
         <>
@@ -58,7 +85,7 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
             onClick={handlePrev}
             aria-label="Previous slide"
           >
-            <FontAwesomeIcon icon={faChevronLeft} />
+            &lt;
           </button>
           
           <button 
@@ -66,21 +93,27 @@ const FeaturedCarCarousel: React.FC<FeaturedCarCarouselProps> = ({
             onClick={handleNext}
             aria-label="Next slide"
           >
-            <FontAwesomeIcon icon={faChevronRight} />
+            &gt;
           </button>
         </>
       )}
-
+      
       <div className="featured-car-carousel__container">
-        <div className="featured-car-carousel__slide">
-          {getCurrentCars().map((car) => {
-            console.log('Rendering car in FeaturedCarCarousel:', car.id);
-            return (
-              <div key={car.id} className="featured-car-carousel__item">
-                <CarCard car={car} />
-              </div>
-            );
-          })}
+        <div className="featured-car-carousel__slide" style={{ display: 'flex', gap: '20px' }}>
+          {cars.length === 0 ? (
+            <div style={{ width: '100%', textAlign: 'center', padding: '2rem' }}>
+              <p>No featured cars available at this time.</p>
+            </div>
+          ) : (
+            getCurrentCars().map((car) => {
+              console.log('Rendering car in FeaturedCarCarousel:', car.id);
+              return (
+                <div key={car.id} className="featured-car-carousel__item" style={{ flex: '1', minWidth: '0' }}>
+                  <CarCard car={car} />
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
       

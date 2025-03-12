@@ -1,0 +1,15 @@
+// Export color variables
+$primary-blue: #056DF2;
+$golden-gate: #F42E08;
+$ochre: #595302;
+$dark-aqua: #02735E;
+$secondary-blue:#3C4373;
+$dark-blue: #3C4373;
+$white: #ffffff;
+$black: #000000;
+$gray: #F1F0EC;
+
+// Helper functions to replace deprecated ones
+@function darken-compat($color, $amount) {
+  @return darken($color, $amount);
+}

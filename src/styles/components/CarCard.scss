@@ -1,19 +1,27 @@
 @import '../common/variables';
+@import '../common/colors';
+
+
+.featured-car-carousel__slide .car-card {
+  width:100%;
+}
 
 .car-card {
   display: flex;
   flex-direction: column;
   background-color: $white;
   border-radius: $border-radius;
-  overflow: hidden;
+  overflow:scroll;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-decoration: none;
   color: $black;
+  height: 650px;
+  width:100%;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
 
   &__image-container {
@@ -93,26 +101,5 @@
         padding-top: 66.67%;
       }
     }
-  }
-
-  // Grid layout for home page
-  @media (min-width: $breakpoint-xl) {
-    width: calc(12.5% - #{$spacing-md}); // 8 cards per row
-  }
-
-  @media (max-width: $breakpoint-xl) {
-    width: calc(16.666% - #{$spacing-md}); // 6 cards per row
-  }
-
-  @media (max-width: $breakpoint-lg) {
-    width: calc(25% - #{$spacing-md}); // 4 cards per row
-  }
-
-  @media (max-width: $breakpoint-md) {
-    width: calc(33.333% - #{$spacing-md}); // 3 cards per row
-  }
-
-  @media (max-width: $breakpoint-sm) {
-    width: calc(50% - #{$spacing-md}); // 2 cards per row
   }
 }

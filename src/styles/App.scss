@@ -1,5 +1,10 @@
-@import './common/variables';
-@import './common/base';
+@import 'common/variables';
+@import 'common/colors';
+@import 'common/typography';
+@import 'common/spacing';
+@import 'common/layout';
+@import 'common/breakpoints';
+@import 'common/base';
 
 body {
   margin: 0;

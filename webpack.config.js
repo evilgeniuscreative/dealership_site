@@ -5,6 +5,9 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
   
+  // This is needed to suppress the Sass legacy JS API deprecation warnings
+  process.env.SASS_SILENCE_DEPRECATION_WARNINGS_FOR_APPS = 'true';
+  
   return {
     entry: './src/client.tsx',
     output: {
@@ -27,7 +30,16 @@ module.exports = (env, argv) => {
           use: [
             isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
             'css-loader',
-            'sass-loader'
+            {
+              loader: 'sass-loader',
+              options: {
+                // Prefer `dart-sass`
+                implementation: require('sass'),
+                sassOptions: {
+                  outputStyle: isProduction ? 'compressed' : 'expanded'
+                }
+              }
+            }
           ]
         },
         {
@@ -54,6 +66,8 @@ module.exports = (env, argv) => {
     ],
     devServer: {
       historyApiFallback: true,
+      hot: true,
+      watchFiles: ['src/**/*.scss', 'src/**/*.css', 'src/**/*.tsx', 'src/**/*.ts'],
       proxy: [
         {
           context: ['/m'],

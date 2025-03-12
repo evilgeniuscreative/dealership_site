@@ -5,6 +5,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Navigation from './components/layout/Navigation';
 import HomePage from './pages/HomePage';
 import InventoryPage from './pages/InventoryPage';
+import CarDetailPage from './pages/CarDetailPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import FinancingPage from './pages/FinancingPage';
@@ -54,6 +55,7 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/inventory/:id" element={<CarDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/financing" element={<FinancingPage />} />

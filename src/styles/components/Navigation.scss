@@ -1,4 +1,5 @@
 @import '../common/variables';
+@import '../common/colors';
 
 .navigation {
   background-color: $white;
@@ -19,14 +20,12 @@
   }
 
   &__logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: $dark-blue;
-    text-decoration: none;
-    transition: color 0.3s ease;
+   flex-basis:50%;
 
-    &:hover {
-      color: darken($dark-blue, 10%);
+    img {
+
+      max-width: 100%;
+      height: auto;
     }
   }
 
@@ -35,17 +34,16 @@
     gap: $spacing-xl;
 
     @media (max-width: $breakpoint-md) {
-      display: none; // For mobile, we'll implement a hamburger menu
+      display: none;
     }
   }
 
   &__link {
-    color: $black;
+    color: $dark-blue;
     text-decoration: none;
-    font-size: 1rem;
-    padding: $spacing-xs 0;
+    font-weight: 500;
     position: relative;
-    transition: color 0.3s ease;
+    padding: $spacing-xs 0;
 
     &::after {
       content: '';
@@ -59,7 +57,7 @@
     }
 
     &:hover {
-      color: $dark-blue;
+      color: darken($dark-blue, 10%);
 
       &::after {
         width: 100%;
@@ -67,11 +65,24 @@
     }
 
     &--active {
-      color: $dark-blue;
+      font-weight: bold;
 
       &::after {
         width: 100%;
       }
+    }
+  }
+
+  &__mobile-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: $dark-blue;
+
+    @media (max-width: $breakpoint-md) {
+      display: block;
     }
   }
 }

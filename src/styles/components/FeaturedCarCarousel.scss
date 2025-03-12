@@ -1,7 +1,10 @@
+@import '../common/variables';
+@import '../common/colors';
+
 .featured-car-carousel {
   position: relative;
   width: 100%;
-  margin: 2rem 0;
+  margin: $spacing-xl 0;
   
   &__container {
     overflow: hidden;
@@ -13,11 +16,13 @@
     justify-content: space-between;
     gap: 1.5rem;
     transition: transform 0.5s ease;
+    padding: 0 $spacing-md;
   }
   
   &__item {
     flex: 1;
-    min-width: 0; // Allows the item to shrink below its content size
+    min-width: 0; // Allow items to shrink below content size
+    padding: 0 $spacing-xs; // Add some spacing between items
   }
   
   &__controls {
@@ -42,7 +47,7 @@
     transition: background-color 0.3s ease;
     
     &:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background: darken(rgba(0, 0, 0, 0.6), 20%);
     }
     
     &--prev {
@@ -75,7 +80,7 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     
     &:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background: darken(rgba(0, 0, 0, 0.5), 30%);
       transform: translateY(-50%) scale(1.1);
     }
     

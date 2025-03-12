@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import '../../../styles/components/SearchBar.scss';
 
 interface SearchBarProps {
@@ -10,10 +8,6 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onAdvancedSearchClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  
-  console.log('SearchBar rendering with props:', { onSearch, onAdvancedSearchClick });
-  console.log('FontAwesomeIcon:', FontAwesomeIcon);
-  console.log('faSearch icon:', faSearch);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +26,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onAdvancedSearchClick }
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <button type="submit" className="search-bar__button">
-          {/* Temporarily replace FontAwesomeIcon with text to see if this is causing the issue */}
-          Search
+          <img src="img/gg_search.svg" alt="Search" title="Search" />
         </button>
       </form>
       <button 

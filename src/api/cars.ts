@@ -3,21 +3,28 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import pool from '../services/database';
 import { Car, SearchFilters } from '../types';
 import { authMiddleware } from '../middleware/auth';
+import { getVisitorId } from '../utils/visitorUtils';
+import { CarRandomizationService } from '../services/carRandomizationService';
+import cookieParser from 'cookie-parser';
 
 const router = express.Router();
+
+// Add cookie parser middleware to access cookies
+router.use(cookieParser());
 
 // Define a type for the request handler with ID parameter
 type IdRequestHandler = (req: Request<{ id: string }>, res: Response) => Promise<void | Response>;
 
 // Public routes
 // Get all cars with pagination and filters
-router.get('/', ((req: Request<{}, {}, {}, SearchFilters>, res: Response, next) => {
+router.get('/', ((req: Request, res: Response, next) => {
   (async () => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 12;
       const offset = (page - 1) * limit;
-
+      
+      // Build the base query with randomization
       let query = 'SELECT * FROM cars WHERE 1=1';
       const params: any[] = [];
 
@@ -52,10 +59,16 @@ router.get('/', ((req: Request<{}, {}, {}, SearchFilters>, res: Response, next) 
         params.push(req.query.maxMileage);
       }
 
-      // Add pagination - use direct values for LIMIT and OFFSET
+      // Use MySQL's RAND() function to completely randomize the order on each request
+      query += ' ORDER BY RAND()';
+      
+      // Add pagination
       query += ` LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+      console.log('Final query:', query);
 
       const [rows] = await pool.execute<RowDataPacket[]>(query, params);
+      console.log(`Found ${rows.length} cars for page ${page}`);
+      
       res.json(rows as Car[]);
     } catch (error) {
       console.error('Error fetching cars:', error);
@@ -69,10 +82,9 @@ router.get('/featured', ((req: Request, res: Response, next) => {
   (async () => {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT c.* FROM cars c
-         INNER JOIN carousel_images ci ON c.id = ci.car_id
-         WHERE ci.carousel_type = 'featured'
-         ORDER BY ci.display_order ASC`
+        `SELECT * FROM cars 
+         WHERE featured_car = 1
+         ORDER BY id ASC`
       );
       
       res.json(rows as Car[]);
@@ -106,7 +118,7 @@ router.get('/:id', ((req: Request<{ id: string }>, res: Response, next) => {
 
 // Protected routes
 // Create a new car
-router.post('/', authMiddleware, ((req: Request<{}, {}, Car>, res: Response, next) => {
+router.post('/', authMiddleware, ((req: Request, res: Response, next) => {
   (async () => {
     try {
       const car: Car = req.body;
@@ -137,8 +149,13 @@ router.post('/', authMiddleware, ((req: Request<{}, {}, Car>, res: Response, nex
         ]
       );
 
+      const newCarId = result.insertId;
+      
+      // Add the new car ID to the cars_array
+      await CarRandomizationService.addCarToArray(newCarId);
+      
       res.status(201).json({
-        id: result.insertId,
+        id: newCarId,
         ...car
       });
     } catch (error) {
@@ -149,7 +166,7 @@ router.post('/', authMiddleware, ((req: Request<{}, {}, Car>, res: Response, nex
 }) as RequestHandler);
 
 // Update a car
-router.put('/:id', authMiddleware, ((req: Request<{ id: string }, {}, Car>, res: Response, next) => {
+router.put('/:id', authMiddleware, ((req: Request<{ id: string }>, res: Response, next) => {
   (async () => {
     try {
       const car: Car = req.body;

@@ -1,10 +1,5 @@
-// Colors
-$primary-blue: #e6f3ff;
-$secondary-blue: #b3d9ff;
-$dark-blue: #0066cc;
-$white: #ffffff;
-$black: #000000;
-$gray: #f5f5f5;
+// Import colors
+@import 'colors';
 
 // Typography
 $font-family-primary: 'semplicitapro', sans-serif;
@@ -29,7 +24,7 @@ $hero-height-home: 600px;
 $hero-height-other: 350px;
 $content-width: 75%;
 $search-width: 25%;
-$border-radius: 5px;
+$border-radius: 8px;
 $border-radius-round: 50%;
 
 // Input styles

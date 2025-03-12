@@ -34,6 +34,7 @@ const InventoryPage: React.FC = () => {
     fetchCars();
   }, []);
 
+  
   const handleSearch = (query: string) => {
     console.log('Search query:', query);
     setActiveFilters(prev => ({ ...prev, query }));

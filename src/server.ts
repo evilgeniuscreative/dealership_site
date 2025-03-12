@@ -12,6 +12,7 @@ import carsRouter from './api/cars';
 import carouselRouter from './api/carousel';
 import uploadRouter from './api/upload';
 import authRouter from './api/auth';
+import cookieParser from 'cookie-parser';
 
 // Type declarations for express-session
 declare module 'express-session' {
@@ -49,6 +50,7 @@ const corsOptions: cors.CorsOptions = {
 // Apply core middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 // Static file serving

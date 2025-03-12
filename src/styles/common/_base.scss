@@ -1,4 +1,9 @@
 @import 'variables';
+@import 'colors';
+@import 'typography';
+@import 'spacing';
+@import 'layout';
+@import 'breakpoints';
 
 * {
   margin: 0;
@@ -17,7 +22,7 @@ textarea {
   font-family: $font-family-primary;
   font-size: $font-size-input;
   padding: $input-padding;
-  border: $input-border;
+  border: $input-border $black;
   border-radius: $border-radius;
   width: 100%;
   

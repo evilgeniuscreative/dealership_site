@@ -1,9 +1,13 @@
 @import '../common/variables';
+@import '../common/colors';
 
 .home-page {
   &__search-section {
     padding: $spacing-xl 0;
-    background-color: $primary-blue;
+    height:185px;
+    margin-top:70px;
+
+    background-color: linear-gradient($primary-blue, $secondary-blue);
   }
 
   &__inventory {
@@ -22,6 +26,11 @@
     gap: $spacing-md;
     padding: 0 $spacing-md;
     justify-content: center;
+    
+    &-item {
+      width: calc((100% - (var(--cards-per-row) - 1) * #{$spacing-md}) / var(--cards-per-row));
+      margin-bottom: $spacing-md;
+    }
   }
 
   &__load-more {

@@ -1,0 +1,14 @@
+// Import all variables for use in other files
+@import 'colors';
+@import 'variables';
+@import 'typography';
+@import 'spacing';
+@import 'layout';
+@import 'breakpoints';
+
+// Re-export all variables for use in other files
+@import 'colors';
+@import 'typography';
+@import 'spacing';
+@import 'layout';
+@import 'breakpoints';

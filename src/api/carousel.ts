@@ -9,11 +9,9 @@ const router: Router = express.Router();
 // Get all carousel images with optional type filter
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const carouselType = req.query.type || 'main';
-    
+    // Remove filtering by carousel_type since the column doesn't exist
     const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM carousel_images WHERE carousel_type = ? ORDER BY display_order ASC',
-      [carouselType]
+      'SELECT * FROM carousel_images ORDER BY display_order ASC'
     );
     
     res.json(rows as CarouselImage[]);
@@ -24,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create a new carousel image
-router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { car_id?: number, carousel_type?: string }>, res: Response) => {
+router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { car_id?: number }>, res: Response) => {
   try {
     const image = req.body;
     
@@ -32,11 +30,11 @@ router.post('/', authMiddleware, async (req: Request<{}, {}, CarouselImage & { c
     let query, params;
     
     if (image.car_id) {
-      query = 'INSERT INTO carousel_images (car_id, title, subtitle, image_name, display_order, carousel_type) VALUES (?, ?, ?, ?, ?, ?)';
-      params = [image.car_id, image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main'];
+      query = 'INSERT INTO carousel_images (car_id, title, subtitle, image_name, display_order) VALUES (?, ?, ?, ?, ?)';
+      params = [image.car_id, image.title, image.subtitle, image.image_name, image.display_order || 0];
     } else {
-      query = 'INSERT INTO carousel_images (title, subtitle, image_name, display_order, carousel_type) VALUES (?, ?, ?, ?, ?)';
-      params = [image.title, image.subtitle, image.image_name, image.display_order || 0, image.carousel_type || 'main'];
+      query = 'INSERT INTO carousel_images (title, subtitle, image_name, display_order) VALUES (?, ?, ?, ?)';
+      params = [image.title, image.subtitle, image.image_name, image.display_order || 0];
     }
 
     const [result] = await pool.execute<ResultSetHeader>(query, params);

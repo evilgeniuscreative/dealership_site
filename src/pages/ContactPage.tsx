@@ -1,8 +1,6 @@
 import React from 'react';
 import Hero from '../components/common/Hero';
 import ContactForm from '../components/features/Contact/ContactForm';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPhone, faEnvelope, faLocationDot } from '@fortawesome/free-solid-svg-icons';
 import '../styles/pages/ContactPage.scss';
 
 const ContactPage: React.FC = () => {
@@ -27,7 +25,7 @@ const ContactPage: React.FC = () => {
 
           <div className="contact-page__details">
             <div className="contact-page__detail">
-              <FontAwesomeIcon icon={faPhone} />
+              <div className="contact-page__icon">📞</div>
               <div>
                 <h3>Phone</h3>
                 <p>(555) 123-4567</p>
@@ -35,7 +33,7 @@ const ContactPage: React.FC = () => {
             </div>
 
             <div className="contact-page__detail">
-              <FontAwesomeIcon icon={faEnvelope} />
+              <div className="contact-page__icon">✉️</div>
               <div>
                 <h3>Email</h3>
                 <p>info@dealership.com</p>
@@ -43,7 +41,7 @@ const ContactPage: React.FC = () => {
             </div>
 
             <div className="contact-page__detail">
-              <FontAwesomeIcon icon={faLocationDot} />
+              <div className="contact-page__icon">📍</div>
               <div>
                 <h3>Location</h3>
                 <p>123 Car Street</p>
