@@ -52,25 +52,134 @@
   }
 
   &__field {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-xs;
-
+    margin-bottom: $spacing-md;
+    width: 100%;
+    
     label {
-      font-weight: bold;
-      color: #666;
+      display: block;
+      margin-bottom: $spacing-xs;
+      font-weight: 500;
     }
-
-    input {
+    
+    input, select {
       width: 100%;
-      height: 45px;
+      padding: $spacing-sm;
+      border: 1px solid $secondary-blue;
+      border-radius: $border-radius;
+      
+      &:focus {
+        outline: none;
+        border-color: $dark-blue;
+      }
+    }
+    
+    &.advanced-search__checkbox {
+      label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        
+        input {
+          width: auto;
+          margin-right: $spacing-sm;
+        }
+      }
     }
   }
-
+  
+  &__typeahead {
+    width: 100%;
+    
+    .form-control {
+      width: 100%;
+      padding: $spacing-sm;
+      border: 1px solid $secondary-blue;
+      border-radius: $border-radius;
+      transition: border-color 0.3s ease;
+      
+      &:focus {
+        border-color: $dark-blue;
+        box-shadow: none;
+        outline: none;
+      }
+    }
+    
+    .dropdown-menu {
+      width: 100%;
+      border-radius: 0 0 $border-radius $border-radius;
+      border: 1px solid $secondary-blue;
+      border-top: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 0;
+      z-index: 1050;
+      
+      .dropdown-item {
+        padding: $spacing-sm $spacing-md;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        
+        &:hover, &.active {
+          background-color: lighten($secondary-blue, 30%);
+        }
+      }
+    }
+  }
+  
   &__field-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: $spacing-md;
+  }
+  
+  &__autocomplete {
+    position: relative;
+    
+    &-options {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: $white;
+      border: 1px solid #ddd;
+      border-radius: 0 0 $border-radius;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 200px;
+      overflow-y: auto;
+      
+      li {
+        padding: $spacing-sm $spacing-md;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: $gray;
+        }
+      }
+    }
+  }
+  
+  &__checkbox {
+    flex-direction: row;
+    align-items: center;
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: $spacing-sm;
+      }
+      
+      span {
+        font-weight: normal;
+      }
+    }
   }
 
   &__submit {

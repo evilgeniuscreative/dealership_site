@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import emailjs from '@emailjs/browser';
 import '../../../styles/components/ContactForm.scss';
 
 const ContactForm: React.FC = () => {
+  const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -10,23 +11,27 @@ const ContactForm: React.FC = () => {
     message: ''
   });
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // EmailJS configuration
+  const SERVICE_ID = 'service_dealership'; // Replace with your actual service ID
+  const TEMPLATE_ID = 'template_contact'; // Replace with your actual template ID
+  const PUBLIC_KEY = 'your_public_key'; // Replace with your actual public key
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formRef.current) return;
+    
     setStatus('sending');
+    setErrorMessage('');
 
     try {
-      await emailjs.send(
-        '**SERVICE_ID**',
-        '**TEMPLATE_ID**',
-        {
-          to_email: '**TO_EMAIL**',
-          from_name: formData.name,
-          from_email: formData.email,
-          phone: formData.phone,
-          message: formData.message,
-        },
-        '**PUBLIC_KEY**'
+      await emailjs.sendForm(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        formRef.current,
+        PUBLIC_KEY
       );
 
       setStatus('success');
@@ -38,6 +43,8 @@ const ContactForm: React.FC = () => {
       });
     } catch (error) {
       setStatus('error');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+      setErrorMessage(errorMsg);
       console.error('Failed to send email:', error);
     }
   };
@@ -53,7 +60,7 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <form className="contact-form" onSubmit={handleSubmit}>
+    <form className="contact-form" onSubmit={handleSubmit} ref={formRef}>
       <div className="contact-form__field">
         <label htmlFor="name">Name *</label>
         <input
@@ -121,7 +128,7 @@ const ContactForm: React.FC = () => {
 
       {status === 'error' && (
         <p className="contact-form__message contact-form__message--error">
-          Failed to send message. Please try again later.
+          Failed to send message: {errorMessage || 'Please try again later.'}
         </p>
       )}
     </form>

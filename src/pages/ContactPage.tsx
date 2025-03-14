@@ -10,7 +10,7 @@ const ContactPage: React.FC = () => {
         title="Contact Us"
         subtitle="We're here to help"
         image_url="/images/contact-hero.jpg"
-        height={350}
+        height={160}
       />
 
       <div className="contact-page__content">

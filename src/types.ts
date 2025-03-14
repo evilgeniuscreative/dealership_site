@@ -150,6 +150,10 @@ export interface SearchFilters {
   minPrice?: number;
   maxPrice?: number;
   maxMileage?: number;
+  color?: string;
+  isAWD?: boolean;
+  minYear?: number;
+  maxYear?: number;
   featured_car?: string;
   query?: string;
   page?: string;

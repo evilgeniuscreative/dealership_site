@@ -1,14 +1,25 @@
 // Export color variables
 $primary-blue: #056DF2;
+$primary-color: $primary-blue;
+$secondary-blue:#3C4373;   
+$light-blue: #bfd7f2;
 $golden-gate: #F42E08;
 $ochre: #595302;
 $dark-aqua: #02735E;
-$secondary-blue:#3C4373;
+$light-aqua: #567ba5;
 $dark-blue: #3C4373;
 $white: #ffffff;
 $black: #000000;
 $gray: #F1F0EC;
+$med-gray: #cccccc; 
+$dark-gray: #999999;
+$grey: $gray;
+$light-gray: $gray;
+$light-grey: $gray;
+$border-color: $gray; 
+$money: #56a55b;
 
+$error-color: #e20000;
 // Helper functions to replace deprecated ones
 @function darken-compat($color, $amount) {
   @return darken($color, $amount);

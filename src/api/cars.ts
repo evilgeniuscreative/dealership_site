@@ -28,37 +28,116 @@ router.get('/', ((req: Request, res: Response, next) => {
       let query = 'SELECT * FROM cars WHERE 1=1';
       const params: any[] = [];
 
+      // Add text search if query parameter exists
+      if (req.query.query) {
+        const searchTerm = `%${req.query.query}%`;
+        const searchWords = (req.query.query as string).split(/\s+/).filter(word => word.length > 0);
+        
+        // Start building the search condition
+        query += ' AND (';
+        
+        // Basic LIKE search for partial matches in any field
+        const likeConditions = [
+          'make LIKE ?',
+          'model LIKE ?',
+          'title LIKE ?',
+          'body_text LIKE ?',
+          'color LIKE ?'
+        ];
+        
+        query += likeConditions.join(' OR ');
+        
+        // Add word boundary search for make, model, and title
+        query += ' OR CONCAT(\' \', make, \' \') LIKE ?';
+        query += ' OR CONCAT(\' \', model, \' \') LIKE ?';
+        query += ' OR CONCAT(\' \', title, \' \') LIKE ?';
+        
+        // Add individual word search for multi-word queries
+        if (searchWords.length > 1) {
+          searchWords.forEach(word => {
+            if (word.length > 2) { // Only search for words with at least 3 characters
+              const wordTerm = `%${word}%`;
+              query += ' OR make LIKE ?';
+              query += ' OR model LIKE ?';
+              query += ' OR title LIKE ?';
+              params.push(wordTerm, wordTerm, wordTerm);
+            }
+          });
+        }
+        
+        query += ')';
+        
+        // Word boundary simulation using CONCAT and spaces
+        const wordBoundaryTerm = `% ${req.query.query} %`;
+        
+        params.push(
+          searchTerm,       // make LIKE
+          searchTerm,       // model LIKE
+          searchTerm,       // title LIKE
+          searchTerm,       // body_text LIKE
+          searchTerm,       // color LIKE
+          wordBoundaryTerm, // CONCAT(' ', make, ' ') LIKE
+          wordBoundaryTerm, // CONCAT(' ', model, ' ') LIKE
+          wordBoundaryTerm  // CONCAT(' ', title, ' ') LIKE
+        );
+      }
+
       // Add filters if they exist
       if (req.query.make) {
-        query += ' AND make = ?';
-        params.push(req.query.make);
+        query += ' AND make LIKE ?';
+        params.push(`%${req.query.make}%`);
       }
 
       if (req.query.model) {
-        query += ' AND model = ?';
-        params.push(req.query.model);
+        query += ' AND model LIKE ?';
+        params.push(`%${req.query.model}%`);
+      }
+      
+      // Price range filters
+      if (req.query.minPrice) {
+        query += ' AND price >= ?';
+        params.push(parseInt(req.query.minPrice as string));
+      }
+      
+      if (req.query.maxPrice) {
+        query += ' AND price <= ?';
+        params.push(parseInt(req.query.maxPrice as string));
+      }
+      
+      // Year range filters
+      if (req.query.minYear) {
+        query += ' AND model_year >= ?';
+        params.push(parseInt(req.query.minYear as string));
+      }
+      
+      if (req.query.maxYear) {
+        query += ' AND model_year <= ?';
+        params.push(parseInt(req.query.maxYear as string));
+      }
+      
+      // Mileage filter
+      if (req.query.maxMileage) {
+        query += ' AND mileage <= ?';
+        params.push(parseInt(req.query.maxMileage as string));
+      }
+      
+      // Color filter
+      if (req.query.color) {
+        query += ' AND color LIKE ?';
+        params.push(`%${req.query.color}%`);
+      }
+      
+      // AWD filter
+      if (req.query.isAWD) {
+        query += ' AND car_type = ?';
+        params.push('AWD');
       }
 
       if (req.query.featured_car) {
         query += ' AND featured_car = ?';
         params.push(req.query.featured_car === 'true' ? 1 : 0);
       }
-
-      if (req.query.minPrice) {
-        query += ' AND price >= ?';
-        params.push(req.query.minPrice);
-      }
-
-      if (req.query.maxPrice) {
-        query += ' AND price <= ?';
-        params.push(req.query.maxPrice);
-      }
-
-      if (req.query.maxMileage) {
-        query += ' AND mileage <= ?';
-        params.push(req.query.maxMileage);
-      }
-
+      
       // Use MySQL's RAND() function to completely randomize the order on each request
       query += ' ORDER BY RAND()';
       

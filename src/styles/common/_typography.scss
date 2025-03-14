@@ -1,4 +1,69 @@
 // Typography variables
+
+// Seplicita Pro
 $font-family-primary: 'semplicitapro', sans-serif;
+
+
+// Semplicita Pro Light
+
+$font-weight-light: 300;
+// Semplicita Pro Regular
+
+$font-weight-regular: 400;
+
+// Semplicita Pro Italic
+$font-style-italic: italic;
+
+// Semplicita Pro Semibold
+$font-weight-semibold: 600;
+
+// Semplicita Pro Bold
+$font-weight-bold: 700;
+
+
+// Font sizes
+$font-size-small: 11px;
 $font-size-base: 16px;
 $font-size-input: 18px;
+$font-size-lg: 24px;
+$font-size-xl: 32px;
+$font-size-xxl: 40px;
+
+// Font styles
+$font-style-italic: italic;  
+$font-style-regular: normal;    
+$font-style-bold: bold; 
+$font-style-light: light; 
+$font-style-semibold: semibold; 
+
+h1 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    font-style: $font-style-regular;
+}
+
+h2  {
+    font-size: $font-size-lg;   
+    font-weight: $font-weight-semibold;
+    font-style: $font-style-regular;
+}
+h3  {   
+    font-size: $font-size-input;
+    font-weight: $font-weight-semibold;     
+    font-style: $font-style-regular;
+}
+h4 {   
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;     
+    font-style: $font-style-regular;
+}
+h5  {   
+    font-size: $font-size-small;
+    font-weight: $font-weight-semibold;     
+    font-style: $font-style-regular;
+}
+h6  {   
+    font-size: $font-size-small;
+    font-weight: $font-weight-semibold;     
+    font-style: $font-style-italic;
+}

@@ -2,7 +2,7 @@
 @import '../common/colors';
 
 .navigation {
-  background-color: $white;
+  background-color: $dark-aqua;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
@@ -39,7 +39,7 @@
   }
 
   &__link {
-    color: $dark-blue;
+    color: $white;
     text-decoration: none;
     font-weight: 500;
     position: relative;
@@ -52,12 +52,12 @@
       left: 0;
       width: 0;
       height: 2px;
-      background-color: $dark-blue;
+      background-color: $white;
       transition: width 0.3s ease;
     }
 
     &:hover {
-      color: darken($dark-blue, 10%);
+      color: darken($gray, 10%);
 
       &::after {
         width: 100%;

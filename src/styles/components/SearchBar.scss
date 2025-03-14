@@ -80,4 +80,77 @@
       color: darken($dark-blue, 10%);
     }
   }
+  
+  &__input-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  &__typeahead {
+    width: 100%;
+    
+    .form-control {
+      width: 100%;
+      height: 45px;
+      padding: 0 $spacing-md;
+      margin: 0 $spacing-lg;
+      border-radius: $border-radius;
+      border: 1px solid $secondary-blue;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        border-color: $dark-blue;
+        box-shadow: none;
+        outline: none;
+      }
+    }
+    
+    .dropdown-menu {
+      width: calc(100% - 2rem);
+      margin: 0 $spacing-lg;
+      border-radius: 0 0 $border-radius $border-radius;
+      border: 1px solid $secondary-blue;
+      border-top: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 0;
+      
+      .dropdown-item {
+        padding: $spacing-sm $spacing-md;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        
+        &:hover, &.active {
+          background-color: lighten($secondary-blue, 30%);
+        }
+      }
+    }
+  }
+  
+  &__suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: $white;
+    border: 1px solid $secondary-blue;
+    border-top: none;
+    border-radius: 0 0 $border-radius $border-radius;
+    z-index: 10;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  &__suggestion-item {
+    padding: $spacing-sm $spacing-md;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: lighten($secondary-blue, 30%);
+    }
+  }
 }

@@ -1,15 +1,73 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Hero from '../components/common/Hero';
 import '../styles/pages/FinancingPage.scss';
+interface FinancingPageProps {
+  monthlyPmt: number;
+  vehiclePrice: number;
+  downPayment: number;
+  term: number;
+  apr: number;
+}
 
 const FinancingPage: React.FC = () => {
+  const calculatePayment = () => {
+    const vehiclePriceInput = document.getElementById('vehiclePrice') as HTMLInputElement;
+    const downPaymentInput = document.getElementById('downPayment') as HTMLInputElement;
+    const termSelect = document.getElementById('term') as HTMLSelectElement;
+    const aprInput = document.getElementById('apr') as HTMLInputElement;
+    
+    // Convert inputs to numbers
+    const vehiclePrice = parseFloat(vehiclePriceInput.value);
+    const downPayment = parseFloat(downPaymentInput.value);
+    const term = parseInt(termSelect.value);
+    const apr = parseFloat(aprInput.value) / 100 / 12; // Convert annual rate to monthly decimal
+    
+    // Calculate number of payments
+    const numPayments = term;
+    
+    // Calculate monthly payment using the correct formula
+    const monthlyPmt = (vehiclePrice - downPayment) * (apr * Math.pow(1 + apr, numPayments)) / (Math.pow(1 + apr, numPayments) - 1);
+    
+    // Display the result
+    const resultElement = document.querySelector('.calculator__payment');
+    if (resultElement) {
+      if (isNaN(monthlyPmt)) {
+        resultElement.textContent = "Error: Please check your numbers.";
+      } else {
+        resultElement.textContent = `$${monthlyPmt.toFixed(2)}`;
+      }
+    }
+  }
+
+  // Use useEffect to add event listeners after component mounts
+  useEffect(() => {
+    // Get the form element after the component is mounted
+    const formElement = document.getElementById('calcForm');
+    
+    // Only add the event listener if the element exists
+    if (formElement) {
+      formElement.addEventListener('change', () => {
+        calculatePayment();
+      });
+    }
+    
+    // Cleanup function to remove event listener when component unmounts
+    return () => {
+      if (formElement) {
+        formElement.removeEventListener('change', () => {
+          calculatePayment();
+        });
+      }
+    };
+  }, []); // Empty dependency array means this runs once after initial render
+
   return (
     <div className="financing-page">
       <Hero
         title="Financing Options"
         subtitle="Find the right payment plan for you"
         image_url="/images/financing-hero.jpg"
-        height={350}
+        height={160}
       />
 
       <div className="financing-page__content">
@@ -57,6 +115,7 @@ const FinancingPage: React.FC = () => {
         <div className="financing-page__calculator">
           <h2>Payment Calculator</h2>
           <div className="financing-page__calculator-form">
+            <div id="calcForm" className="calcForm">
             <div className="calculator__field">
               <label htmlFor="vehiclePrice">Vehicle Price</label>
               <input 
@@ -97,13 +156,14 @@ const FinancingPage: React.FC = () => {
               />
             </div>
 
-            <button className="calculator__submit">
+            <button className="calculator__submit" onClick={calculatePayment}>
               Calculate Payment
             </button>
 
             <div className="calculator__result">
               <h3>Estimated Monthly Payment:</h3>
               <p className="calculator__payment">$0.00</p>
+            </div>
             </div>
           </div>
         </div>

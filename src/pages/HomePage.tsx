@@ -5,6 +5,7 @@ import SearchBar from '../components/features/Search/SearchBar';
 import AdvancedSearch from '../components/features/Search/AdvancedSearch';
 import CarCard from '../components/features/Cars/CarCard';
 import { Car, CarouselImage, SearchFilters } from '../types';
+import { useNavigate } from 'react-router-dom';
 import '../styles/pages/HomePage.scss';
 
 const HomePage: React.FC = () => {
@@ -18,6 +19,8 @@ const HomePage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [cardsPerRow, setCardsPerRow] = useState(4);
+
+  const navigate = useNavigate();
 
   // Randomize cars in featured
   const shuffle = (array: Car[]) => {
@@ -125,13 +128,27 @@ const HomePage: React.FC = () => {
   };
 
   const handleSearch = (query: string) => {
-    // TODO: Implement search functionality
-    console.log('Search query:', query);
+    console.log('Searching for:', query);
+    if (query.trim()) {
+      navigate(`/inventory?query=${encodeURIComponent(query.trim())}`);
+    } else {
+      navigate('/inventory');
+    }
   };
 
   const handleAdvancedSearch = (filters: SearchFilters) => {
-    // TODO: Implement advanced search functionality
-    console.log('Advanced search filters:', filters);
+    console.log('Advanced search with filters:', filters);
+    
+    // Build query string from filters
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    
+    navigate(`/inventory?${params.toString()}`);
   };
 
   const loadMoreCars = () => {

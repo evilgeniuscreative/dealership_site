@@ -39,6 +39,20 @@ console.log('car?',car.body_text)
     return imagePath;
   };
 
+  // Truncate text to a specified character limit, ending at the last full word
+  const truncateText = (text: string, limit: number = 360) => {
+    if (!text || text.length <= limit) return text;
+    
+    // Find the last space within the limit
+    const lastSpaceIndex = text.substring(0, limit).lastIndexOf(' ');
+    
+    // If no space found, just cut at the limit
+    if (lastSpaceIndex === -1) return text.substring(0, limit) + '...';
+    
+    // Otherwise cut at the last space
+    return text.substring(0, lastSpaceIndex) + '...';
+  };
+
   // Check if the car has any displayable data
   const hasNoData = !car.make && !car.model && !car.price && !car.mileage && !car.image_name;
   
@@ -70,7 +84,12 @@ console.log('car?',car.body_text)
           {car.mileage > 0 && <p className="car-card__mileage">{formatMileage(car.mileage)} miles</p>}
           {hasNoData && <p className="car-card__price">Contact for Price</p>}
         </div>
-        {car.body_text && <p className="car-card__summary">{car.body_text}</p>}
+        {car.body_text && (
+          <div className="car-card__summary-container">
+            <p className="car-card__summary">{truncateText(car.body_text)}</p>
+            <Link to={`/inventory/${car.id}`} className="car-card__read-more">Find out more...</Link>
+          </div>
+        )}
         {hasNoData && <p className="car-card__summary">Contact us for more information about this featured vehicle.</p>}
         {isFullWidth && (
           <div className="car-card__specs">
